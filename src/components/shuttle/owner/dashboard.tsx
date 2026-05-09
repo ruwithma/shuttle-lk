@@ -50,13 +50,13 @@ export default function OwnerDashboard() {
   if (loading) {
     return (
       <div className="p-4 space-y-4">
-        <div className="h-8 bg-gray-100 rounded-lg animate-pulse w-48" />
+        <div className="h-8 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse w-48" />
         <div className="grid grid-cols-2 gap-3">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
+            <div key={i} className="h-24 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
           ))}
         </div>
-        <div className="h-48 bg-gray-100 rounded-2xl animate-pulse" />
+        <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
       </div>
     )
   }
@@ -87,7 +87,7 @@ export default function OwnerDashboard() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h2 className="text-xl font-bold text-gray-900">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
           {greeting()}, {currentUser?.name?.split(' ')[0]}!
         </h2>
         <p className="text-sm text-muted-foreground">Here&apos;s your shuttle overview</p>
@@ -105,28 +105,28 @@ export default function OwnerDashboard() {
           value={stats.totalStudents}
           icon={Users}
           iconColor="text-emerald-600"
-          iconBg="bg-emerald-50"
+          iconBg="bg-emerald-50 dark:bg-emerald-900/50"
         />
         <StatCard
           title="Monthly Income"
           value={formatLKR(stats.monthlyIncome)}
           icon={TrendingUp}
           iconColor="text-green-600"
-          iconBg="bg-green-50"
+          iconBg="bg-green-50 dark:bg-green-900/50"
         />
         <StatCard
           title="Total Expenses"
           value={formatLKR(stats.totalExpenses)}
           icon={TrendingDown}
           iconColor="text-red-600"
-          iconBg="bg-red-50"
+          iconBg="bg-red-50 dark:bg-red-900/50"
         />
         <StatCard
           title="Net Profit"
           value={formatLKR(stats.netProfit)}
           icon={DollarSign}
           iconColor={stats.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}
-          iconBg={stats.netProfit >= 0 ? 'bg-emerald-50' : 'bg-red-50'}
+          iconBg={stats.netProfit >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/50' : 'bg-red-50 dark:bg-red-900/50'}
         />
       </motion.div>
 
@@ -139,7 +139,7 @@ export default function OwnerDashboard() {
         <Card className="rounded-2xl border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Collection Rate</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Collection Rate</span>
               <span className="text-sm font-bold text-emerald-600">{stats.collectionRate}%</span>
             </div>
             <Progress value={stats.collectionRate} className="h-2" />
@@ -162,7 +162,7 @@ export default function OwnerDashboard() {
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stats.monthlyData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis dataKey="month" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} />
                     <Tooltip
@@ -229,13 +229,13 @@ export default function OwnerDashboard() {
                 {stats.recentPayments.slice(0, 5).map((payment) => (
                   <div key={payment.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
-                        <span className="text-xs font-semibold text-emerald-700">
+                      <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/50 flex items-center justify-center">
+                        <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                           {payment.student?.name?.charAt(0) || 'S'}
                         </span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {payment.student?.name || 'Student'}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -244,7 +244,7 @@ export default function OwnerDashboard() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-semibold text-gray-900">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                         {formatLKR(payment.amount)}
                       </p>
                       <div className="flex gap-1 justify-end">
@@ -252,8 +252,8 @@ export default function OwnerDashboard() {
                           variant="secondary"
                           className={`text-[10px] px-1.5 py-0 ${
                             payment.paymentMethod === 'CASH'
-                              ? 'bg-emerald-50 text-emerald-700'
-                              : 'bg-blue-50 text-blue-700'
+                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
+                              : 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
                           }`}
                         >
                           {payment.paymentMethod === 'CASH' ? 'Cash' : 'Bank'}

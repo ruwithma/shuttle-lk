@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Bus as BusIcon, CreditCard, HandCoins, Radio, CircleOff, Navigation, Gauge } from 'lucide-react'
+import { Bus as BusIcon, CreditCard, HandCoins, Radio, CircleOff, Navigation, Gauge, Play, Sparkles } from 'lucide-react'
 import { useSharedSocket } from '@/components/shuttle/shared/socket-provider'
+import { useSimulation } from '@/components/shuttle/shared/simulation-manager'
 import { useAppStore } from '@/lib/store'
 import { fetchDashboardData, isCacheFresh } from '@/lib/data-fetcher'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -68,6 +69,33 @@ export default function DriverDashboard() {
     } catch {}
     return []
   }, [bus?.routeCoordinates])
+
+  // Demo simulation hook
+  const {
+    startSimulation: startDemoSimulation,
+    stopSimulation: stopDemoSimulation,
+    isSimulating: isDemoSimulating,
+    currentPosition: demoPosition,
+  } = useSimulation(
+    bus?.id,
+    routeCoords,
+    currentUser?.id,
+    currentUser?.name,
+    bus?.name,
+    bus?.ownerId,
+    bus?.routeName,
+    bus?.routeStart,
+    bus?.routeEnd,
+    bus?.plateNumber,
+  )
+
+  // Update speed/heading from demo simulation
+  useEffect(() => {
+    if (isDemoSimulating && demoPosition) {
+      setCurrentSpeed(demoPosition.speed)
+      setCurrentHeading(demoPosition.heading)
+    }
+  }, [isDemoSimulating, demoPosition])
 
   const startLive = useCallback(() => {
     if (!bus?.id || !currentUser) return
@@ -215,6 +243,23 @@ export default function DriverDashboard() {
     simIndexRef.current = 0
   }, [bus?.id, bus?.ownerId, setIsDriverLive, socket])
 
+  // Start demo mode - uses the useSimulation hook
+  const startDemoMode = useCallback(() => {
+    if (!bus?.id || routeCoords.length < 2) return
+    setIsDriverLive(true)
+    setSimulationMode(true)
+    startDemoSimulation()
+  }, [bus?.id, routeCoords, setIsDriverLive, startDemoSimulation])
+
+  // Stop demo mode
+  const stopDemoMode = useCallback(() => {
+    stopDemoSimulation()
+    setIsDriverLive(false)
+    setSimulationMode(false)
+    setCurrentSpeed(null)
+    setCurrentHeading(null)
+  }, [stopDemoSimulation, setIsDriverLive])
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -227,9 +272,9 @@ export default function DriverDashboard() {
   if (loading) {
     return (
       <div className="p-4 space-y-4">
-        <div className="h-8 bg-gray-100 rounded-lg animate-pulse w-48" />
-        <div className="h-32 bg-gray-100 rounded-2xl animate-pulse" />
-        <div className="h-20 bg-gray-100 rounded-2xl animate-pulse" />
+        <div className="h-8 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse w-48" />
+        <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
+        <div className="h-20 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
       </div>
     )
   }
@@ -244,51 +289,79 @@ export default function DriverDashboard() {
   const dailyCount = data.todayPayments.filter(p => p.paymentType === 'DAILY').length
   const monthlyCount = data.todayPayments.filter(p => p.paymentType === 'MONTHLY').length
 
+  // Determine if demo mode is active
+  const isDemoActive = isDemoSimulating
+
   return (
     <div className="relative">
       <RefreshIndicator loading={refreshing} />
       <div className="p-4 space-y-4">
         {/* Welcome */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             {greeting()}, {currentUser?.name?.split(' ')[0]}!
           </h2>
           <p className="text-sm text-muted-foreground">Ready for today&apos;s collections?</p>
         </motion.div>
 
-        {/* Go Live Toggle Card */}
+        {/* Go Live / Demo Mode Toggle Card */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <Card className={`rounded-2xl border-0 shadow-sm ${isDriverLive ? 'bg-emerald-50' : 'bg-gray-50'}`}>
+          <Card className={`rounded-2xl border-0 shadow-sm ${
+            isDemoActive
+              ? 'bg-amber-50 dark:bg-amber-950/30'
+              : isDriverLive
+                ? 'bg-emerald-50 dark:bg-emerald-950/30'
+                : 'bg-gray-50 dark:bg-gray-800'
+          }`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {isDriverLive ? (
                     <div className="relative flex items-center justify-center">
-                      <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
-                        <Radio className="w-5 h-5 text-white" />
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        isDemoActive ? 'bg-amber-500' : 'bg-emerald-500'
+                      }`}>
+                        {isDemoActive ? (
+                          <Sparkles className="w-5 h-5 text-white" />
+                        ) : (
+                          <Radio className="w-5 h-5 text-white" />
+                        )}
                       </div>
                       <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                     </div>
                   ) : (
-                    <div className="w-10 h-10 bg-gray-300 rounded-xl flex items-center justify-center">
-                      <CircleOff className="w-5 h-5 text-gray-500" />
+                    <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-xl flex items-center justify-center">
+                      <CircleOff className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                     </div>
                   )}
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {isDriverLive ? 'You are LIVE' : 'Go Live'}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {isDriverLive
+                          ? isDemoActive
+                            ? 'DEMO MODE'
+                            : 'You are LIVE'
+                          : 'Go Live'}
+                      </p>
+                      {isDemoActive && (
+                        <Badge className="text-[9px] px-1.5 py-0 bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 border-0">
+                          SIMULATION
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {isDriverLive
-                        ? simulationMode
-                          ? 'Simulation mode · Sharing location'
-                          : 'Sharing your GPS location'
+                        ? isDemoActive
+                          ? 'Simulating bus movement along route'
+                          : simulationMode
+                            ? 'Simulation mode · Sharing location'
+                            : 'Sharing your GPS location'
                         : 'Share your location with students & owner'}
                     </p>
                   </div>
                 </div>
                 <Button
-                  onClick={isDriverLive ? stopLive : startLive}
+                  onClick={isDriverLive ? (isDemoActive ? stopDemoMode : stopLive) : startLive}
                   className={`rounded-xl text-sm font-semibold ${
                     isDriverLive
                       ? 'bg-red-500 hover:bg-red-600 text-white'
@@ -301,22 +374,28 @@ export default function DriverDashboard() {
 
               {/* Speed and heading card when live */}
               {isDriverLive && (currentSpeed !== null || currentHeading !== null) && (
-                <div className="mt-3 flex gap-2">
+                <div className="mt-3 flex gap-2 flex-wrap">
                   {currentSpeed !== null && (
-                    <div className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-1.5 shadow-sm">
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 rounded-lg px-3 py-1.5 shadow-sm">
                       <Gauge className="w-3.5 h-3.5 text-emerald-600" />
-                      <span className="text-xs font-semibold text-gray-900">{currentSpeed} km/h</span>
+                      <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{currentSpeed} km/h</span>
                     </div>
                   )}
                   {currentHeading !== null && (
-                    <div className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-1.5 shadow-sm">
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 rounded-lg px-3 py-1.5 shadow-sm">
                       <Navigation className="w-3.5 h-3.5 text-emerald-600" style={{ transform: `rotate(${currentHeading}deg)` }} />
-                      <span className="text-xs font-semibold text-gray-900">{currentHeading}°</span>
+                      <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{currentHeading}°</span>
                     </div>
                   )}
-                  {simulationMode && (
-                    <div className="flex items-center gap-1.5 bg-amber-50 rounded-lg px-3 py-1.5">
-                      <span className="text-xs font-medium text-amber-700">Demo</span>
+                  {isDemoActive && (
+                    <div className="flex items-center gap-1.5 bg-amber-100 dark:bg-amber-900/40 rounded-lg px-3 py-1.5">
+                      <Sparkles className="w-3 h-3 text-amber-600" />
+                      <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Demo</span>
+                    </div>
+                  )}
+                  {!isDemoActive && simulationMode && (
+                    <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/30 rounded-lg px-3 py-1.5">
+                      <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Sim</span>
                     </div>
                   )}
                 </div>
@@ -325,27 +404,56 @@ export default function DriverDashboard() {
           </Card>
         </motion.div>
 
+        {/* Demo Mode Button - only show when NOT live */}
+        {!isDriverLive && routeCoords.length >= 2 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+            <Card
+              className="rounded-2xl border-2 border-dashed border-amber-300 dark:border-amber-700 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 cursor-pointer hover:shadow-md transition-all hover:border-amber-400"
+              onClick={startDemoMode}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-200 dark:shadow-amber-900/50">
+                    <Play className="w-6 h-6 text-white ml-0.5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm">Start Demo</h3>
+                      <Badge className="text-[8px] px-1.5 py-0 bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 border-0 uppercase tracking-wider font-bold">
+                        Simulation
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Simulate bus movement along your route for demo purposes
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Bus Card */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card className="rounded-2xl border-0 shadow-sm bg-emerald-50">
+          <Card className="rounded-2xl border-0 shadow-sm bg-emerald-50 dark:bg-emerald-950/30">
             <CardContent className="p-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center">
                   <BusIcon className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{bus.name}</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">{bus.name}</h3>
                   <p className="text-xs text-muted-foreground">{bus.plateNumber}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="flex items-center gap-1">
                   <span className="text-muted-foreground">Route:</span>
-                  <span className="font-medium">{bus.routeName || 'N/A'}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{bus.routeName || 'N/A'}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="text-muted-foreground">Capacity:</span>
-                  <span className="font-medium">{bus.capacity} seats</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{bus.capacity} seats</span>
                 </div>
               </div>
             </CardContent>
@@ -371,14 +479,14 @@ export default function DriverDashboard() {
             <Card className="rounded-2xl border-0 shadow-sm">
               <CardContent className="p-3 text-center">
                 <HandCoins className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-                <p className="text-lg font-bold text-gray-900">{dailyCount}</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{dailyCount}</p>
                 <p className="text-[10px] text-muted-foreground">Daily Payments</p>
               </CardContent>
             </Card>
             <Card className="rounded-2xl border-0 shadow-sm">
               <CardContent className="p-3 text-center">
                 <CreditCard className="w-5 h-5 text-purple-500 mx-auto mb-1" />
-                <p className="text-lg font-bold text-gray-900">{monthlyCount}</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{monthlyCount}</p>
                 <p className="text-[10px] text-muted-foreground">Monthly Payments</p>
               </CardContent>
             </Card>
@@ -397,21 +505,21 @@ export default function DriverDashboard() {
                   {data.todayPayments.map((payment) => (
                     <div key={payment.id} className="flex items-center justify-between py-1.5">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center">
-                          <span className="text-[10px] font-semibold text-emerald-700">
+                        <div className="w-7 h-7 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                          <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
                             {payment.student?.name?.charAt(0) || 'S'}
                           </span>
                         </div>
                         <div>
-                          <p className="text-sm font-medium">{payment.student?.name || 'Student'}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{payment.student?.name || 'Student'}</p>
                           <p className="text-[10px] text-muted-foreground">
                             {format(new Date(payment.date), 'h:mm a')}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold">{formatLKR(payment.amount)}</p>
-                        <Badge className={`text-[9px] px-1.5 py-0 ${payment.paymentMethod === 'CASH' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatLKR(payment.amount)}</p>
+                        <Badge className={`text-[9px] px-1.5 py-0 ${payment.paymentMethod === 'CASH' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'}`}>
                           {payment.paymentMethod === 'CASH' ? 'Cash' : 'Bank'}
                         </Badge>
                       </div>

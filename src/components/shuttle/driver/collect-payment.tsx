@@ -121,14 +121,14 @@ export default function CollectPayment() {
 
   return (
     <div className="p-4 space-y-4">
-      <h2 className="text-lg font-bold text-gray-900">Collect Payment</h2>
+      <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Collect Payment</h2>
 
       {/* Bus Info */}
       {driverBus && (
-        <Card className="rounded-2xl border-0 shadow-sm bg-emerald-50">
+        <Card className="rounded-2xl border-0 shadow-sm bg-emerald-50 dark:bg-emerald-900/30">
           <CardContent className="p-3">
             <p className="text-xs text-emerald-600 font-medium">Assigned Bus</p>
-            <p className="text-sm font-bold text-gray-900">{driverBus.name} - {driverBus.plateNumber}</p>
+            <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{driverBus.name} - {driverBus.plateNumber}</p>
           </CardContent>
         </Card>
       )}
@@ -159,14 +159,14 @@ export default function CollectPayment() {
               className="space-y-3"
             >
               {/* Student Info */}
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">
+              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-900/50 flex items-center justify-center">
                   <Users className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold">{selectedSub.student?.name}</p>
                   <div className="flex gap-1 mt-0.5">
-                    <Badge className={`text-[9px] px-1.5 py-0 ${selectedSub.paymentType === 'MONTHLY' ? 'bg-purple-50 text-purple-700' : 'bg-amber-50 text-amber-700'}`}>
+                    <Badge className={`text-[9px] px-1.5 py-0 ${selectedSub.paymentType === 'MONTHLY' ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'}`}>
                       {selectedSub.paymentType === 'MONTHLY' ? 'Monthly' : 'Daily'}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
@@ -241,7 +241,7 @@ export default function CollectPayment() {
       {recentCollections.length > 0 && (
         <Card className="rounded-2xl border-0 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-sm font-semibold mb-3">Recent Collections</p>
+            <p className="text-sm font-semibold mb-3 dark:text-gray-100">Recent Collections</p>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {recentCollections.map((payment) => (
                 <div key={payment.id} className="flex items-center justify-between py-1.5">

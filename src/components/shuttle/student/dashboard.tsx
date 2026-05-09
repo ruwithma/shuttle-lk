@@ -15,9 +15,9 @@ import type { StudentDashboard as StudentDashboardType } from '@/lib/types'
 const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
 const statusConfig = {
-  PAID: { icon: CheckCircle2, color: 'bg-emerald-50 text-emerald-700 border-emerald-200', badge: 'bg-emerald-600 text-white', label: 'PAID' },
-  UNPAID: { icon: AlertCircle, color: 'bg-red-50 text-red-700 border-red-200', badge: 'bg-red-500 text-white', label: 'UNPAID' },
-  OVERDUE: { icon: Clock, color: 'bg-amber-50 text-amber-700 border-amber-200', badge: 'bg-amber-500 text-white', label: 'OVERDUE' },
+  PAID: { icon: CheckCircle2, color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800', badge: 'bg-emerald-600 text-white', label: 'PAID' },
+  UNPAID: { icon: AlertCircle, color: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800', badge: 'bg-red-500 text-white', label: 'UNPAID' },
+  OVERDUE: { icon: Clock, color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-800', badge: 'bg-amber-500 text-white', label: 'OVERDUE' },
 }
 
 export default function StudentDashboard() {
@@ -107,9 +107,9 @@ export default function StudentDashboard() {
   if (loading) {
     return (
       <div className="p-4 space-y-4">
-        <div className="h-8 bg-gray-100 rounded-lg animate-pulse w-48" />
-        <div className="h-32 bg-gray-100 rounded-2xl animate-pulse" />
-        <div className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
+        <div className="h-8 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse w-48" />
+        <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
+        <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
       </div>
     )
   }
@@ -118,7 +118,7 @@ export default function StudentDashboard() {
     <div className="p-4 space-y-4">
       {/* Welcome */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="text-xl font-bold text-gray-900">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
           {greeting()}, {currentUser?.name?.split(' ')[0]}!
         </h2>
       </motion.div>
@@ -184,7 +184,7 @@ export default function StudentDashboard() {
                 <Search className="w-7 h-7 text-white" />
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-gray-900 text-base">Find Shuttles</h3>
+                <h3 className="font-bold text-gray-900 dark:text-gray-100 text-base">Find Shuttles</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Discover routes near you & track live buses</p>
               </div>
               <div className="flex items-center gap-1.5">
@@ -221,7 +221,7 @@ export default function StudentDashboard() {
           </CardHeader>
           <CardContent className="pb-4">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/50 rounded-xl flex items-center justify-center">
                 <BusIcon className="w-5 h-5 text-emerald-600" />
               </div>
               <div>
@@ -230,13 +230,13 @@ export default function StudentDashboard() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-gray-50 rounded-lg p-2">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
                 <span className="text-muted-foreground">Type</span>
                 <p className="font-semibold">
                   {data.subscription.paymentType === 'MONTHLY' ? 'Monthly' : 'Daily'}
                 </p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-2">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
                 <span className="text-muted-foreground">Amount</span>
                 <p className="font-semibold">
                   {formatLKR(
@@ -254,15 +254,15 @@ export default function StudentDashboard() {
       {/* Bus Offline Status */}
       {!isLive && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <Card className="rounded-2xl border-0 shadow-sm">
+          <Card className="rounded-2xl border-0 shadow-sm bg-gray-50 dark:bg-gray-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
-                    <Radio className="w-5 h-5 text-gray-400" />
+                  <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center">
+                    <Radio className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-500">Bus is offline</p>
+                    <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">Bus is offline</p>
                     <p className="text-xs text-muted-foreground">Check back later for live tracking</p>
                   </div>
                 </div>
@@ -287,14 +287,14 @@ export default function StudentDashboard() {
           <Card className="rounded-2xl border-0 shadow-sm">
             <CardContent className="p-3 text-center">
               <CreditCard className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
-              <p className="text-lg font-bold text-gray-900">{formatLKR(totalPaidThisMonth)}</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatLKR(totalPaidThisMonth)}</p>
               <p className="text-[10px] text-muted-foreground">Paid This Month</p>
             </CardContent>
           </Card>
           <Card className="rounded-2xl border-0 shadow-sm">
             <CardContent className="p-3 text-center">
               <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
-              <p className="text-lg font-bold text-gray-900">{data.paymentHistory.length}</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{data.paymentHistory.length}</p>
               <p className="text-[10px] text-muted-foreground">Total Payments</p>
             </CardContent>
           </Card>

@@ -49,7 +49,7 @@ export default function StudentPaymentHistory() {
     return (
       <div className="p-4 space-y-3">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-16 bg-gray-100 rounded-2xl animate-pulse" />
+          <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
         ))}
       </div>
     )
@@ -57,15 +57,15 @@ export default function StudentPaymentHistory() {
 
   return (
     <div className="p-4 space-y-4">
-      <h2 className="text-lg font-bold text-gray-900">Payment History</h2>
+      <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Payment History</h2>
 
       {/* Monthly Summary */}
-      <Card className="rounded-2xl border-0 shadow-sm bg-emerald-50">
+      <Card className="rounded-2xl border-0 shadow-sm bg-emerald-50 dark:bg-emerald-900/30">
         <CardContent className="p-4 text-center">
           <p className="text-sm text-emerald-600">
             {filterMonth ? `Total for ${format(new Date(filterMonth + '-01'), 'MMM yyyy')}` : 'Total Payments'}
           </p>
-          <p className="text-2xl font-bold text-emerald-700">{formatLKR(monthTotal)}</p>
+          <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{formatLKR(monthTotal)}</p>
           <p className="text-xs text-muted-foreground mt-1">{filtered.length} payments</p>
         </CardContent>
       </Card>
@@ -109,7 +109,7 @@ export default function StudentPaymentHistory() {
                           {payment.date ? format(new Date(payment.date), 'MMM d, yyyy') : ''}
                         </p>
                         <div className="flex items-center gap-1 mt-0.5">
-                          <Badge className={`text-[9px] px-1.5 py-0 ${payment.paymentMethod === 'CASH' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>
+                          <Badge className={`text-[9px] px-1.5 py-0 ${payment.paymentMethod === 'CASH' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'}`}>
                             {payment.paymentMethod === 'CASH' ? 'Cash' : 'Bank'}
                           </Badge>
                           {payment.collector?.name && (
@@ -120,7 +120,7 @@ export default function StudentPaymentHistory() {
                         </div>
                       </div>
                     </div>
-                    <p className="text-sm font-bold text-gray-900">{formatLKR(payment.amount)}</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatLKR(payment.amount)}</p>
                   </div>
                 </CardContent>
               </Card>

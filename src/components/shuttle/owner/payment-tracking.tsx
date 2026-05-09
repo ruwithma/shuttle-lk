@@ -30,13 +30,13 @@ import type { Payment } from '@/lib/types'
 const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
 const methodBadge = (method: string) => {
-  if (method === 'CASH') return 'bg-emerald-50 text-emerald-700'
-  return 'bg-blue-50 text-blue-700'
+  if (method === 'CASH') return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
+  return 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
 }
 
 const typeBadge = (type: string) => {
-  if (type === 'DAILY') return 'bg-amber-50 text-amber-700'
-  return 'bg-purple-50 text-purple-700'
+  if (type === 'DAILY') return 'bg-amber-50 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
+  return 'bg-purple-50 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
 }
 
 export default function PaymentTracking() {
@@ -139,7 +139,7 @@ export default function PaymentTracking() {
     return (
       <div className="p-4 space-y-3">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-20 bg-gray-100 rounded-2xl animate-pulse" />
+          <div key={i} className="h-20 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
         ))}
       </div>
     )
@@ -148,7 +148,7 @@ export default function PaymentTracking() {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-gray-900">Payments</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Payments</h2>
         <Button onClick={() => setShowDialog(true)} size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
           <Plus className="w-4 h-4 mr-1" />
           Record Payment
@@ -157,16 +157,16 @@ export default function PaymentTracking() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-3">
-        <Card className="rounded-2xl border-0 shadow-sm bg-emerald-50">
+        <Card className="rounded-2xl border-0 shadow-sm bg-emerald-50 dark:bg-emerald-900/30">
           <CardContent className="p-3">
             <p className="text-[10px] font-medium text-emerald-600">Today</p>
-            <p className="text-lg font-bold text-emerald-700">{formatLKR(todayTotal)}</p>
+            <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{formatLKR(todayTotal)}</p>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border-0 shadow-sm bg-blue-50">
+        <Card className="rounded-2xl border-0 shadow-sm bg-blue-50 dark:bg-blue-900/30">
           <CardContent className="p-3">
             <p className="text-[10px] font-medium text-blue-600">This Month</p>
-            <p className="text-lg font-bold text-blue-700">{formatLKR(monthTotal)}</p>
+            <p className="text-lg font-bold text-blue-700 dark:text-blue-300">{formatLKR(monthTotal)}</p>
           </CardContent>
         </Card>
       </div>
@@ -175,13 +175,13 @@ export default function PaymentTracking() {
         <Card className="rounded-2xl border-0 shadow-sm">
           <CardContent className="p-3">
             <p className="text-[10px] font-medium text-amber-600">Daily Total</p>
-            <p className="text-sm font-bold text-gray-900">{formatLKR(dailyTotal)}</p>
+            <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatLKR(dailyTotal)}</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border-0 shadow-sm">
           <CardContent className="p-3">
             <p className="text-[10px] font-medium text-purple-600">Monthly Total</p>
-            <p className="text-sm font-bold text-gray-900">{formatLKR(monthlyTotal)}</p>
+            <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatLKR(monthlyTotal)}</p>
           </CardContent>
         </Card>
       </div>
@@ -236,11 +236,11 @@ export default function PaymentTracking() {
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center">
+                      <div className="w-9 h-9 rounded-full bg-emerald-50 dark:bg-emerald-900/50 flex items-center justify-center">
                         <CreditCard className="w-4 h-4 text-emerald-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {payment.student?.name || 'Student'}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -250,7 +250,7 @@ export default function PaymentTracking() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-gray-900">{formatLKR(payment.amount)}</p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatLKR(payment.amount)}</p>
                       <div className="flex gap-1 justify-end">
                         <Badge className={`text-[9px] px-1.5 py-0 ${typeBadge(payment.paymentType)}`}>
                           {payment.paymentType === 'DAILY' ? 'Daily' : 'Monthly'}

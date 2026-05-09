@@ -12,9 +12,9 @@ import { format } from 'date-fns'
 import type { Notification, NotificationType } from '@/lib/types'
 
 const typeConfig: Record<NotificationType, { icon: React.ElementType; color: string }> = {
-  PAYMENT_REMINDER: { icon: BellRing, color: 'bg-amber-50 text-amber-600' },
-  PAYMENT_RECEIVED: { icon: DollarSign, color: 'bg-emerald-50 text-emerald-600' },
-  GENERAL: { icon: Info, color: 'bg-blue-50 text-blue-600' },
+  PAYMENT_REMINDER: { icon: BellRing, color: 'bg-amber-50 dark:bg-amber-900/50 text-amber-600' },
+  PAYMENT_RECEIVED: { icon: DollarSign, color: 'bg-emerald-50 dark:bg-emerald-900/50 text-emerald-600' },
+  GENERAL: { icon: Info, color: 'bg-blue-50 dark:bg-blue-900/50 text-blue-600' },
 }
 
 export default function NotificationPanel() {
@@ -98,7 +98,7 @@ export default function NotificationPanel() {
     return (
       <div className="p-4 space-y-3">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-16 bg-gray-100 rounded-2xl animate-pulse" />
+          <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
         ))}
       </div>
     )
@@ -109,7 +109,7 @@ export default function NotificationPanel() {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-gray-900">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
           Notifications
           {unreadCount > 0 && (
             <Badge className="ml-2 bg-red-500 text-white text-[10px]">{unreadCount}</Badge>
@@ -150,18 +150,18 @@ export default function NotificationPanel() {
               >
                 <Card
                   className={`rounded-xl border-0 shadow-sm cursor-pointer transition-all ${
-                    notif.read ? 'bg-white' : 'bg-emerald-50/50 border-l-4 border-l-emerald-500'
+                    notif.read ? 'bg-white dark:bg-card' : 'bg-emerald-50/50 dark:bg-emerald-900/30 border-l-4 border-l-emerald-500'
                   }`}
                   onClick={() => !notif.read && markAsRead(notif.id)}
                 >
                   <CardContent className="p-3">
                     <div className="flex items-start gap-3">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${config.color.split(' ')[0]}`}>
-                        <Icon className={`w-4 h-4 ${config.color.split(' ')[1]}`} />
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${config.color.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('dark:bg-')).join(' ')}`}>
+                        <Icon className={`w-4 h-4 ${config.color.split(' ').find(c => c.startsWith('text-')) || ''}`} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <p className={`text-sm font-medium ${notif.read ? 'text-gray-700' : 'text-gray-900'}`}>
+                          <p className={`text-sm font-medium ${notif.read ? 'text-gray-700 dark:text-gray-300' : 'text-gray-900 dark:text-gray-100'}`}>
                             {notif.title}
                           </p>
                           {!notif.read && (

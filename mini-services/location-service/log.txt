@@ -139,3 +139,80 @@ $ bun --hot index.ts
 [connection] socket=0W4snchN4dg-DKk0AAAT
 [subscribe-owner] socket=RT5DmSHNU4BPfDO4AAAR joined owner:cmoydogg10000mgfaaukv79uo
 [unsubscribe-owner] socket=RT5DmSHNU4BPfDO4AAAR left owner:cmoydogg10000mgfaaukv79uo
+[connection] socket=tZ05NzJpS-K-9ibeAAAV
+[disconnect] socket=0W4snchN4dg-DKk0AAAT (reason: transport close)
+[subscribe-bus] socket=RT5DmSHNU4BPfDO4AAAR joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=RT5DmSHNU4BPfDO4AAAR left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-all-live] socket=RT5DmSHNU4BPfDO4AAAR joined all-live
+[unsubscribe-all-live] socket=RT5DmSHNU4BPfDO4AAAR left all-live
+[subscribe-bus] socket=RT5DmSHNU4BPfDO4AAAR joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=RT5DmSHNU4BPfDO4AAAR left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-all-live] socket=RT5DmSHNU4BPfDO4AAAR joined all-live
+[unsubscribe-all-live] socket=RT5DmSHNU4BPfDO4AAAR left all-live
+[subscribe-all-live] socket=RT5DmSHNU4BPfDO4AAAR joined all-live
+[unsubscribe-all-live] socket=RT5DmSHNU4BPfDO4AAAR left all-live
+[subscribe-bus] socket=RT5DmSHNU4BPfDO4AAAR joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=RT5DmSHNU4BPfDO4AAAR left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-all-live] socket=RT5DmSHNU4BPfDO4AAAR joined all-live
+[unsubscribe-all-live] socket=RT5DmSHNU4BPfDO4AAAR left all-live
+[subscribe-bus] socket=RT5DmSHNU4BPfDO4AAAR joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=RT5DmSHNU4BPfDO4AAAR left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-all-live] socket=RT5DmSHNU4BPfDO4AAAR joined all-live
+[unsubscribe-all-live] socket=RT5DmSHNU4BPfDO4AAAR left all-live
+[subscribe-bus] socket=RT5DmSHNU4BPfDO4AAAR joined bus:cmoydoggf000gmgfadtofe0bq
+[connection] socket=0Or30EiGINwLHRQUAAAX
+[disconnect] socket=RT5DmSHNU4BPfDO4AAAR (reason: transport close)
+[subscribe-bus] socket=0Or30EiGINwLHRQUAAAX joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=0Or30EiGINwLHRQUAAAX left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-all-live] socket=0Or30EiGINwLHRQUAAAX joined all-live
+[unsubscribe-all-live] socket=0Or30EiGINwLHRQUAAAX left all-live
+[subscribe-bus] socket=0Or30EiGINwLHRQUAAAX joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=0Or30EiGINwLHRQUAAAX left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-all-live] socket=0Or30EiGINwLHRQUAAAX joined all-live
+[unsubscribe-all-live] socket=0Or30EiGINwLHRQUAAAX left all-live
+[subscribe-bus] socket=0Or30EiGINwLHRQUAAAX joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=0Or30EiGINwLHRQUAAAX left bus:cmoydoggf000gmgfadtofe0bq
+[driver-start] socket=0Or30EiGINwLHRQUAAAX bus=cmoydoggf000gmgfadtofe0bq driver=Nimal Silva busName=Kadawatha Route owner=cmoydogg10000mgfaaukv79uo
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=6.936999999999999 lng=79.84925 speed=37 heading=21
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=6.9435 lng=79.8555 speed=30 heading=51
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=6.9515 lng=79.8665 speed=42 heading=58
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=6.959 lng=79.8785 speed=46 heading=58
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=6.9670000000000005 lng=79.89 speed=29 heading=51
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=6.973 lng=79.899 speed=41 heading=63
+[subscribe-bus] socket=0Or30EiGINwLHRQUAAAX joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=0Or30EiGINwLHRQUAAAX left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=0Or30EiGINwLHRQUAAAX joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=0Or30EiGINwLHRQUAAAX left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=0Or30EiGINwLHRQUAAAX joined bus:cmoydoggf000gmgfadtofe0bq
+[disconnect] socket=0Or30EiGINwLHRQUAAAX was driver of bus=cmoydoggf000gmgfadtofe0bq, removed from live map (reason: transport close)
+[connection] socket=oxDlzY6VuxxAabogAAAZ
+[subscribe-bus] socket=oxDlzY6VuxxAabogAAAZ joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=oxDlzY6VuxxAabogAAAZ left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=oxDlzY6VuxxAabogAAAZ joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=oxDlzY6VuxxAabogAAAZ left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=oxDlzY6VuxxAabogAAAZ joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=oxDlzY6VuxxAabogAAAZ left bus:cmoydoggf000gmgfadtofe0bq
+[driver-start] socket=oxDlzY6VuxxAabogAAAZ bus=cmoydoggf000gmgfadtofe0bq driver=Nimal Silva busName=Kadawatha Route owner=cmoydogg10000mgfaaukv79uo
+[driver-stop] socket=oxDlzY6VuxxAabogAAAZ bus=cmoydoggf000gmgfadtofe0bq owner=cmoydogg10000mgfaaukv79uo
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=37.751 lng=-97.822 speed=- heading=-
+[subscribe-owner] socket=oxDlzY6VuxxAabogAAAZ joined owner:cmoydogg10000mgfaaukv79uo
+[unsubscribe-owner] socket=oxDlzY6VuxxAabogAAAZ left owner:cmoydogg10000mgfaaukv79uo
+[connection] socket=JnCY6nMryE88Kl_vAAAb
+[connection] socket=aWZq7mSac0935_6XAAAd
+[disconnect] socket=tZ05NzJpS-K-9ibeAAAV (reason: transport close)
+[subscribe-bus] socket=JnCY6nMryE88Kl_vAAAb joined bus:cmoyleh8l000gmgumcg529aaz
+[disconnect] socket=oxDlzY6VuxxAabogAAAZ was driver of bus=cmoydoggf000gmgfadtofe0bq, removed from live map (reason: transport close)
+[unsubscribe-bus] socket=JnCY6nMryE88Kl_vAAAb left bus:cmoyleh8l000gmgumcg529aaz
+[subscribe-all-live] socket=JnCY6nMryE88Kl_vAAAb joined all-live
+[unsubscribe-all-live] socket=JnCY6nMryE88Kl_vAAAb left all-live
+[subscribe-bus] socket=JnCY6nMryE88Kl_vAAAb joined bus:cmoyleh8l000gmgumcg529aaz
+[unsubscribe-bus] socket=JnCY6nMryE88Kl_vAAAb left bus:cmoyleh8l000gmgumcg529aaz
+[driver-start] socket=JnCY6nMryE88Kl_vAAAb bus=cmoyleh8l000gmgumcg529aaz driver=Nimal Silva busName=Kadawatha Route owner=cmoyleh880000mgumvx1o52xy
+[driver-location] bus=cmoyleh8l000gmgumcg529aaz lat=6.9354 lng=79.84915000000001 speed=43 heading=58
+[subscribe-bus] socket=JnCY6nMryE88Kl_vAAAb joined bus:cmoyleh8l000gmgumcg529aaz
+[unsubscribe-bus] socket=JnCY6nMryE88Kl_vAAAb left bus:cmoyleh8l000gmgumcg529aaz
+[subscribe-bus] socket=JnCY6nMryE88Kl_vAAAb joined bus:cmoyleh8l000gmgumcg529aaz
+[connection] socket=GRwScVL0Zx2DV9SsAAAf
+[disconnect] socket=GRwScVL0Zx2DV9SsAAAf (reason: client namespace disconnect)
+[unsubscribe-bus] socket=JnCY6nMryE88Kl_vAAAb left bus:cmoyleh8l000gmgumcg529aaz
+[subscribe-owner] socket=JnCY6nMryE88Kl_vAAAb joined owner:cmoyleh880000mgumvx1o52xy

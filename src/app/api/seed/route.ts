@@ -1,16 +1,96 @@
 import { db } from '@/lib/db'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    // Check if force re-seed is requested
+    const { searchParams } = new URL(request.url)
+    const force = searchParams.get('force')
+
     // Check if data already exists
     const existingUsers = await db.user.count()
-    if (existingUsers > 0) {
-      return NextResponse.json({ message: 'Already seeded' }, { status: 200 })
+    if (existingUsers > 0 && force !== 'true') {
+      return NextResponse.json({ message: 'Already seeded. Use ?force=true to re-seed.' }, { status: 200 })
+    }
+
+    // If force re-seed, delete all existing data
+    if (existingUsers > 0 && force === 'true') {
+      await db.$transaction(async (tx) => {
+        await tx.notification.deleteMany()
+        await tx.payment.deleteMany()
+        await tx.expense.deleteMany()
+        await tx.subscription.deleteMany()
+        await tx.busLocation.deleteMany()
+        await tx.route.deleteMany()
+        await tx.bus.deleteMany()
+        await tx.user.deleteMany()
+      })
     }
 
     const now = new Date()
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+
+    // ── Detailed route coordinates ──────────────────────────────────────────
+
+    // Kadawatha → University of Kelaniya (31 points along actual roads)
+    const kadawathaRouteCoords: [number, number][] = [
+      [6.9350,79.8485], [6.9358,79.8498], [6.9368,79.8512], [6.9380,79.8525],
+      [6.9395,79.8545], [6.9410,79.8568], [6.9428,79.8590], [6.9445,79.8612],
+      [6.9462,79.8635], [6.9480,79.8658], [6.9495,79.8675], [6.9510,79.8692],
+      [6.9528,79.8710], [6.9545,79.8730], [6.9560,79.8748], [6.9578,79.8765],
+      [6.9595,79.8782], [6.9612,79.8800], [6.9630,79.8818], [6.9645,79.8835],
+      [6.9660,79.8850], [6.9678,79.8865], [6.9695,79.8880], [6.9710,79.8898],
+      [6.9725,79.8915], [6.9740,79.8932], [6.9750,79.8950], [6.9755,79.8970],
+      [6.9758,79.8990], [6.9760,79.9010], [6.9750,79.9030],
+    ]
+
+    // Kiribathgoda → University of Kelaniya (21 points along actual roads)
+    const kiribathgodaRouteCoords: [number, number][] = [
+      [6.9770,79.8930], [6.9772,79.8945], [6.9775,79.8960], [6.9778,79.8975],
+      [6.9782,79.8990], [6.9788,79.9000], [6.9795,79.9008], [6.9802,79.9015],
+      [6.9808,79.9020], [6.9805,79.9025], [6.9800,79.9028], [6.9795,79.9030],
+      [6.9790,79.9032], [6.9785,79.9033], [6.9780,79.9032], [6.9775,79.9030],
+      [6.9770,79.9028], [6.9765,79.9028], [6.9760,79.9030], [6.9755,79.9032],
+      [6.9750,79.9030],
+    ]
+
+    // Kadawatha Route stops with estimated minutes
+    const kadawathaStops = [
+      { name: 'Kadawatha Town', lat: 6.9350, lng: 79.8485, order: 1, estimatedMinutes: 0 },
+      { name: 'Mabola', lat: 6.9480, lng: 79.8658, order: 2, estimatedMinutes: 8 },
+      { name: 'Wattala', lat: 6.9630, lng: 79.8818, order: 3, estimatedMinutes: 16 },
+      { name: 'Kelaniya Bridge', lat: 6.9710, lng: 79.8898, order: 4, estimatedMinutes: 22 },
+      { name: 'University of Kelaniya', lat: 6.9750, lng: 79.9030, order: 5, estimatedMinutes: 28 },
+    ]
+
+    // Kiribathgoda Route stops with estimated minutes
+    const kiribathgodaStops = [
+      { name: 'Kiribathgoda Town', lat: 6.9770, lng: 79.8930, order: 1, estimatedMinutes: 0 },
+      { name: 'Kadawatha Road', lat: 6.9782, lng: 79.8990, order: 2, estimatedMinutes: 5 },
+      { name: 'Makola', lat: 6.9802, lng: 79.9015, order: 3, estimatedMinutes: 10 },
+      { name: 'Kelaniya', lat: 6.9785, lng: 79.9033, order: 4, estimatedMinutes: 15 },
+      { name: 'University of Kelaniya', lat: 6.9750, lng: 79.9030, order: 5, estimatedMinutes: 20 },
+    ]
+
+    // Calculate total distance using Haversine for each route
+    function calculateDistance(coords: [number, number][]): number {
+      let total = 0
+      for (let i = 1; i < coords.length; i++) {
+        const [lat1, lng1] = coords[i - 1]
+        const [lat2, lng2] = coords[i]
+        const R = 6371000
+        const dLat = (lat2 - lat1) * Math.PI / 180
+        const dLng = (lng2 - lng1) * Math.PI / 180
+        const a = Math.sin(dLat / 2) ** 2 +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+          Math.sin(dLng / 2) ** 2
+        total += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+      }
+      return total
+    }
+
+    const kadawathaDistance = calculateDistance(kadawathaRouteCoords)
+    const kiribathgodaDistance = calculateDistance(kiribathgodaRouteCoords)
 
     const result = await db.$transaction(async (tx) => {
       // === CREATE USERS ===
@@ -71,7 +151,7 @@ export async function POST() {
         students.push({ ...student, paymentType: sd.paymentType, monthlyAmount: sd.monthlyAmount, dailyAmount: sd.dailyAmount })
       }
 
-      // === CREATE BUSES ===
+      // === CREATE BUSES with detailed route coordinates ===
       const busKadawatha = await tx.bus.create({
         data: {
           plateNumber: 'WP CAB-1234',
@@ -81,10 +161,16 @@ export async function POST() {
           routeStart: 'Kadawatha',
           routeEnd: 'University of Kelaniya',
           routeStops: 'Kadawatha Town,Mabola,Wattala,Kelaniya Bridge,University of Kelaniya',
-          routeCoordinates: '[ [6.9350,79.8485], [6.9390,79.8500], [6.9480,79.8610], [6.9550,79.8720], [6.9630,79.8850], [6.9710,79.8950], [6.9750,79.9030] ]',
-          routeStopCoordinates: '{ "Kadawatha Town": [6.9350,79.8485], "Mabola": [6.9480,79.8610], "Wattala": [6.9630,79.8850], "Kelaniya Bridge": [6.9710,79.8950], "University of Kelaniya": [6.9750,79.9030] }',
+          routeCoordinates: JSON.stringify(kadawathaRouteCoords),
+          routeStopCoordinates: JSON.stringify({
+            'Kadawatha Town': [6.9350, 79.8485],
+            'Mabola': [6.9480, 79.8658],
+            'Wattala': [6.9630, 79.8818],
+            'Kelaniya Bridge': [6.9710, 79.8898],
+            'University of Kelaniya': [6.9750, 79.9030],
+          }),
           currentLat: 6.9480,
-          currentLng: 79.8610,
+          currentLng: 79.8658,
           ownerId: owner.id,
           driverId: driverNimal.id,
           active: true,
@@ -100,8 +186,14 @@ export async function POST() {
           routeStart: 'Kiribathgoda',
           routeEnd: 'University of Kelaniya',
           routeStops: 'Kiribathgoda Town,Kadawatha Road,Makola,Kelaniya,University of Kelaniya',
-          routeCoordinates: '[ [6.9770,79.8930], [6.9780,79.8950], [6.9790,79.8980], [6.9800,79.9000], [6.9780,79.9030], [6.9750,79.9030] ]',
-          routeStopCoordinates: '{ "Kiribathgoda Town": [6.9770,79.8930], "Kadawatha Road": [6.9790,79.8980], "Makola": [6.9800,79.9000], "Kelaniya": [6.9780,79.9030], "University of Kelaniya": [6.9750,79.9030] }',
+          routeCoordinates: JSON.stringify(kiribathgodaRouteCoords),
+          routeStopCoordinates: JSON.stringify({
+            'Kiribathgoda Town': [6.9770, 79.8930],
+            'Kadawatha Road': [6.9782, 79.8990],
+            'Makola': [6.9802, 79.9015],
+            'Kelaniya': [6.9785, 79.9033],
+            'University of Kelaniya': [6.9750, 79.9030],
+          }),
           currentLat: 6.9790,
           currentLng: 79.8980,
           ownerId: owner.id,
@@ -110,8 +202,73 @@ export async function POST() {
         },
       })
 
+      // === CREATE ROUTE RECORDS (with stops that have estimatedMinutes) ===
+
+      // Kadawatha Forward Route
+      await tx.route.create({
+        data: {
+          busId: busKadawatha.id,
+          name: 'Kadawatha - University of Kelaniya',
+          direction: 'forward',
+          coordinates: JSON.stringify(kadawathaRouteCoords.map(([lat, lng]) => [lng, lat])), // MapLibre [lng, lat] order
+          stops: JSON.stringify(kadawathaStops),
+          totalDistance: kadawathaDistance,
+          estimatedDuration: 28,
+          isActive: true,
+        },
+      })
+
+      // Kadawatha Return Route
+      await tx.route.create({
+        data: {
+          busId: busKadawatha.id,
+          name: 'University of Kelaniya - Kadawatha',
+          direction: 'return',
+          coordinates: JSON.stringify([...kadawathaRouteCoords].reverse().map(([lat, lng]) => [lng, lat])),
+          stops: JSON.stringify([...kadawathaStops].reverse().map((s, i) => ({
+            ...s,
+            order: i + 1,
+            estimatedMinutes: 28 - s.estimatedMinutes,
+          }))),
+          totalDistance: kadawathaDistance,
+          estimatedDuration: 28,
+          isActive: true,
+        },
+      })
+
+      // Kiribathgoda Forward Route
+      await tx.route.create({
+        data: {
+          busId: busKiribathgoda.id,
+          name: 'Kiribathgoda - University of Kelaniya',
+          direction: 'forward',
+          coordinates: JSON.stringify(kiribathgodaRouteCoords.map(([lat, lng]) => [lng, lat])),
+          stops: JSON.stringify(kiribathgodaStops),
+          totalDistance: kiribathgodaDistance,
+          estimatedDuration: 20,
+          isActive: true,
+        },
+      })
+
+      // Kiribathgoda Return Route
+      await tx.route.create({
+        data: {
+          busId: busKiribathgoda.id,
+          name: 'University of Kelaniya - Kiribathgoda',
+          direction: 'return',
+          coordinates: JSON.stringify([...kiribathgodaRouteCoords].reverse().map(([lat, lng]) => [lng, lat])),
+          stops: JSON.stringify([...kiribathgodaStops].reverse().map((s, i) => ({
+            ...s,
+            order: i + 1,
+            estimatedMinutes: 20 - s.estimatedMinutes,
+          }))),
+          totalDistance: kiribathgodaDistance,
+          estimatedDuration: 20,
+          isActive: true,
+        },
+      })
+
       // === CREATE SUBSCRIPTIONS ===
-      // First 7 students on Kadawatha route, last 5 on Kiribathgoda route
       const subscriptions = []
       for (let i = 0; i < students.length; i++) {
         const s = students[i]
@@ -133,7 +290,6 @@ export async function POST() {
       }
 
       // === CREATE PAYMENTS ===
-      // Monthly students - paid for current month (some paid, some not)
       const paymentEntries = []
       for (let i = 0; i < students.length; i++) {
         const s = students[i]
@@ -142,7 +298,6 @@ export async function POST() {
         const collectorId = i < 7 ? driverNimal.id : driverSunil.id
 
         if (s.paymentType === 'MONTHLY') {
-          // Some monthly students have paid, some haven't (index 0, 2, 4 paid; 6, 8, 10 not paid)
           const hasPaid = [0, 2, 4].includes(i)
           if (hasPaid) {
             const payDate = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate(), 5))
@@ -160,11 +315,9 @@ export async function POST() {
             })
           }
         } else {
-          // Daily students - create payments for some days this month
           const daysToPay = Math.min(now.getDate(), 10)
           for (let d = 1; d <= daysToPay; d++) {
             const dayDate = new Date(now.getFullYear(), now.getMonth(), d)
-            // Skip weekends (Sat=6, Sun=0)
             const dayOfWeek = dayDate.getDay()
             if (dayOfWeek === 0 || dayOfWeek === 6) continue
 
@@ -209,7 +362,6 @@ export async function POST() {
       const notificationEntries = [
         { userId: owner.id, title: 'Monthly Report Ready', message: 'Your monthly income and expense report for this month is ready to view.', type: 'GENERAL' },
         { userId: owner.id, title: 'Payment Collected', message: 'Kavindi Rajapaksa has paid LKR 2,500 for the monthly pass.', type: 'PAYMENT_RECEIVED' },
-        // Notifications for unpaid monthly students
         { userId: students[6].id, title: 'Payment Reminder', message: 'Your monthly payment of LKR 3,000 for the Kadawatha Route is due. Please make the payment as soon as possible.', type: 'PAYMENT_REMINDER' },
         { userId: students[8].id, title: 'Payment Reminder', message: 'Your monthly payment of LKR 2,500 for the Kadawatha Route is due. Please make the payment as soon as possible.', type: 'PAYMENT_REMINDER' },
         { userId: students[10].id, title: 'Payment Reminder', message: 'Your monthly payment of LKR 2,800 for the Kiribathgoda Route is due. Please make the payment as soon as possible.', type: 'PAYMENT_REMINDER' },
@@ -224,10 +376,13 @@ export async function POST() {
       return {
         users: { owner: 1, drivers: 2, students: 12 },
         buses: 2,
+        routes: 4,
         subscriptions: subscriptions.length,
         payments: paymentEntries.length,
         expenses: expenseEntries.length,
         notifications: notificationEntries.length,
+        kadawathaRoutePoints: kadawathaRouteCoords.length,
+        kiribathgodaRoutePoints: kiribathgodaRouteCoords.length,
       }
     })
 

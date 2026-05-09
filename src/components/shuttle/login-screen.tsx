@@ -121,8 +121,8 @@ export default function LoginScreen() {
                       onClick={() => setSelectedRole(item.role)}
                       className={`flex flex-col items-center p-3 rounded-xl border-2 transition-all ${
                         selectedRole === item.role
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                          : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
+                          : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600'
                       }`}
                     >
                       <item.icon className="w-5 h-5 mb-1" />

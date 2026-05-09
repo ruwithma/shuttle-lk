@@ -130,7 +130,7 @@ export default function BusManagement() {
     return (
       <div className="p-4 space-y-3">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-28 bg-gray-100 rounded-2xl animate-pulse" />
+          <div key={i} className="h-28 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
         ))}
       </div>
     )
@@ -139,7 +139,7 @@ export default function BusManagement() {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-gray-900">My Buses</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">My Buses</h2>
         <Button onClick={openAdd} size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
           <Plus className="w-4 h-4 mr-1" />
           Add Bus
@@ -161,11 +161,11 @@ export default function BusManagement() {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
+                        <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/50 rounded-xl flex items-center justify-center">
                           <BusIcon className="w-6 h-6 text-emerald-600" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900">{bus.name}</h3>
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100">{bus.name}</h3>
                           <p className="text-xs text-muted-foreground">{bus.plateNumber}</p>
                         </div>
                       </div>
@@ -216,11 +216,11 @@ export default function BusManagement() {
                       <Badge variant="secondary" className="text-[10px]">
                         {bus.driver?.name || 'No driver assigned'}
                       </Badge>
-                      <Badge className={`text-[10px] ${bus.active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                      <Badge className={`text-[10px] ${bus.active ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}>
                         {bus.active ? 'Active' : 'Inactive'}
                       </Badge>
                       {bus.id && busLocations[bus.id]?.isLive ? (
-                        <Badge className="text-[10px] bg-emerald-100 text-emerald-700 flex items-center gap-1">
+                        <Badge className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 flex items-center gap-1">
                           <span className="relative flex h-1.5 w-1.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />

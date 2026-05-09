@@ -104,7 +104,7 @@ export default function StudentManagement() {
     return (
       <div className="p-4 space-y-3">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
+          <div key={i} className="h-24 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
         ))}
       </div>
     )
@@ -113,7 +113,7 @@ export default function StudentManagement() {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-gray-900">Students</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Students</h2>
         <Button onClick={() => setShowDialog(true)} size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
           <Plus className="w-4 h-4 mr-1" />
           Add Student
@@ -164,11 +164,11 @@ export default function StudentManagement() {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 bg-amber-50 dark:bg-amber-900/50 rounded-full flex items-center justify-center">
                           <Users className="w-5 h-5 text-amber-600" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-sm text-gray-900">
+                          <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">
                             {sub.student?.name || 'Student'}
                           </h3>
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -180,8 +180,8 @@ export default function StudentManagement() {
                       <Badge
                         className={`text-[10px] ${
                           sub.active
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-gray-100 text-gray-500'
+                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
+                            : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
                         }`}
                       >
                         {sub.active ? 'Active' : 'Inactive'}
@@ -195,13 +195,13 @@ export default function StudentManagement() {
                       <Badge
                         className={`text-[10px] ${
                           sub.paymentType === 'MONTHLY'
-                            ? 'bg-purple-50 text-purple-700'
-                            : 'bg-amber-50 text-amber-700'
+                            ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
+                            : 'bg-amber-50 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
                         }`}
                       >
                         {sub.paymentType === 'MONTHLY' ? 'Monthly' : 'Daily'}
                       </Badge>
-                      <span className="text-xs font-semibold text-gray-700">
+                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                         {sub.paymentType === 'MONTHLY'
                           ? formatLKR(sub.monthlyAmount)
                           : formatLKR(sub.dailyAmount)}

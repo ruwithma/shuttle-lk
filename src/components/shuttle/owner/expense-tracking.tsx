@@ -30,10 +30,10 @@ import type { Expense, ExpenseCategory } from '@/lib/types'
 const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
 const categoryConfig: Record<ExpenseCategory, { color: string; icon: React.ElementType }> = {
-  FUEL: { color: 'bg-amber-50 text-amber-700', icon: Fuel },
-  MAINTENANCE: { color: 'bg-red-50 text-red-700', icon: Wrench },
-  SALARY: { color: 'bg-emerald-50 text-emerald-700', icon: Banknote },
-  OTHER: { color: 'bg-gray-100 text-gray-600', icon: Package },
+  FUEL: { color: 'bg-amber-50 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300', icon: Fuel },
+  MAINTENANCE: { color: 'bg-red-50 text-red-700 dark:bg-red-900/50 dark:text-red-300', icon: Wrench },
+  SALARY: { color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300', icon: Banknote },
+  OTHER: { color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400', icon: Package },
 }
 
 export default function ExpenseTracking() {
@@ -115,7 +115,7 @@ export default function ExpenseTracking() {
     return (
       <div className="p-4 space-y-3">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-20 bg-gray-100 rounded-2xl animate-pulse" />
+          <div key={i} className="h-20 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
         ))}
       </div>
     )
@@ -124,7 +124,7 @@ export default function ExpenseTracking() {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-gray-900">Expenses</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Expenses</h2>
         <Button onClick={() => setShowDialog(true)} size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
           <Plus className="w-4 h-4 mr-1" />
           Add Expense
@@ -139,12 +139,12 @@ export default function ExpenseTracking() {
           return (
             <Card key={cat} className="rounded-2xl border-0 shadow-sm">
               <CardContent className="p-3 flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${config.color.split(' ')[0]}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${config.color.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('dark:bg-')).join(' ')}`}>
                   <Icon className="w-4 h-4" />
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">{cat.charAt(0) + cat.slice(1).toLowerCase()}</p>
-                  <p className="text-sm font-bold text-gray-900">{formatLKR(categorySummary[cat] || 0)}</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatLKR(categorySummary[cat] || 0)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -196,11 +196,11 @@ export default function ExpenseTracking() {
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${config.color.split(' ')[0]}`}>
-                          <config.icon className="w-4 h-4" />
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${config.color.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('dark:bg-')).join(' ')}`}>
+                          <config.icon className={`w-4 h-4 ${config.color.split(' ').find(c => c.startsWith('text-')) || ''}`} />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {expense.description || expense.category.charAt(0) + expense.category.slice(1).toLowerCase()}
                           </p>
                           <div className="flex items-center gap-2 mt-0.5">
