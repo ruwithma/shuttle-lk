@@ -2,9 +2,13 @@ $ bun --hot index.ts
 46 |     }
 47 |   }
 48 |   let er;
-49 |   if (args.length > 0)
-50 |     er = args[0];
-51 |     throw er;
-                 ^
+49 | Received SIGTERM signal, shutting down server...
+Location tracking server closed
+ ^
 error: Failed to start server. Is port 3003 in use?
       at emitError (node:events:51:13)
+$ bun --hot index.ts
+🚌 Location tracking WebSocket server running on port 3003
+[connection] socket=hqZoMP4DuqfymEMkAAAB
+[subscribe-bus] socket=hqZoMP4DuqfymEMkAAAB joined bus:cmoydoggf000gmgfadtofe0bq
+[disconnect] socket=hqZoMP4DuqfymEMkAAAB (reason: client namespace disconnect)
