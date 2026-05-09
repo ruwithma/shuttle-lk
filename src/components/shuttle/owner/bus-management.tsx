@@ -171,7 +171,7 @@ export default function BusManagement() {
                       </div>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(bus)}>
-                          <Edit className="w-4 h-4 text-gray-500" />
+                          <Edit className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(bus.id)}>
                           <Trash2 className="w-4 h-4 text-red-400" />

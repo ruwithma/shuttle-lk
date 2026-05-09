@@ -216,3 +216,10 @@ $ bun --hot index.ts
 [disconnect] socket=GRwScVL0Zx2DV9SsAAAf (reason: client namespace disconnect)
 [unsubscribe-bus] socket=JnCY6nMryE88Kl_vAAAb left bus:cmoyleh8l000gmgumcg529aaz
 [subscribe-owner] socket=JnCY6nMryE88Kl_vAAAb joined owner:cmoyleh880000mgumvx1o52xy
+[unsubscribe-owner] socket=JnCY6nMryE88Kl_vAAAb left owner:cmoyleh880000mgumvx1o52xy
+[connection] socket=FNUY5g5y_232eY7bAAAh
+[disconnect] socket=aWZq7mSac0935_6XAAAd (reason: transport close)
+[disconnect] socket=JnCY6nMryE88Kl_vAAAb was driver of bus=cmoyleh8l000gmgumcg529aaz, removed from live map (reason: transport close)
+[connection] socket=BYfG0j0UXTJO5DgXAAAj
+[disconnect] socket=BYfG0j0UXTJO5DgXAAAj (reason: ping timeout)
+[disconnect] socket=FNUY5g5y_232eY7bAAAh (reason: ping timeout)

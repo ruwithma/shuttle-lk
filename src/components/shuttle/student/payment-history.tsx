@@ -105,7 +105,7 @@ export default function StudentPaymentHistory() {
                     <div className="flex items-center gap-3">
                       <CreditCard className="w-4 h-4 text-emerald-500" />
                       <div>
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {payment.date ? format(new Date(payment.date), 'MMM d, yyyy') : ''}
                         </p>
                         <div className="flex items-center gap-1 mt-0.5">

@@ -105,14 +105,14 @@ export default function DriverHistory() {
                     <div className="flex items-center gap-3">
                       <History className="w-4 h-4 text-emerald-500" />
                       <div>
-                        <p className="text-sm font-medium">{payment.student?.name || 'Student'}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{payment.student?.name || 'Student'}</p>
                         <p className="text-[10px] text-muted-foreground">
                           {payment.date ? format(new Date(payment.date), 'MMM d, yyyy') : ''}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold">{formatLKR(payment.amount)}</p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatLKR(payment.amount)}</p>
                       <Badge className={`text-[9px] px-1.5 py-0 ${payment.paymentMethod === 'CASH' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'}`}>
                         {payment.paymentMethod === 'CASH' ? 'Cash' : 'Bank'}
                       </Badge>

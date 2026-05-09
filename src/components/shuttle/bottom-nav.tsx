@@ -10,6 +10,7 @@ import {
   History,
   Route,
   Search,
+  Radio,
 } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import type { UserRole } from '@/lib/types'
@@ -25,8 +26,8 @@ interface TabConfig {
 const TABS: TabConfig[] = [
   { id: 'dashboard', label: 'Home', icon: LayoutDashboard, roles: ['OWNER', 'DRIVER', 'STUDENT'] },
   { id: 'find', label: 'Find', icon: Search, roles: ['STUDENT'] },
+  { id: 'fleet-tracking', label: 'Fleet', icon: Radio, roles: ['OWNER'] },
   { id: 'buses', label: 'Buses', icon: Bus, roles: ['OWNER'] },
-  { id: 'students', label: 'Students', icon: Users, roles: ['OWNER'] },
   { id: 'payments', label: 'Payments', icon: CreditCard, roles: ['OWNER', 'STUDENT'] },
   { id: 'collect', label: 'Collect', icon: HandCoins, roles: ['DRIVER'] },
   { id: 'record-route', label: 'Route', icon: Route, roles: ['DRIVER'] },

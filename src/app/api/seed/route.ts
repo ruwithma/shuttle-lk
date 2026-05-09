@@ -1,6 +1,116 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 
+// ── OSRM Routing Helper ──────────────────────────────────────────────────
+
+async function getOSRMRoute(waypoints: [number, number][]): Promise<[number, number][] | null> {
+  if (waypoints.length < 2) return null
+
+  const coordsStr = waypoints
+    .map(([lat, lng]) => `${lng},${lat}`)
+    .join(';')
+
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`
+
+  try {
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'ShuttleLK/1.0' },
+      signal: AbortSignal.timeout(15000),
+    })
+
+    if (!response.ok) return null
+
+    const data = await response.json()
+    if (data.code !== 'Ok' || !data.routes?.length) return null
+
+    const route = data.routes[0]
+    const coords: [number, number][] = route.geometry.coordinates.map(
+      ([lng, lat]: [number, number]) => [lat, lng]
+    )
+
+    // Simplify to ~80 points
+    if (coords.length > 80) {
+      const step = Math.max(1, Math.floor(coords.length / 80))
+      const simplified: [number, number][] = []
+      for (let i = 0; i < coords.length; i += step) {
+        simplified.push(coords[i])
+      }
+      if (simplified[simplified.length - 1][0] !== coords[coords.length - 1][0] ||
+          simplified[simplified.length - 1][1] !== coords[coords.length - 1][1]) {
+        simplified.push(coords[coords.length - 1])
+      }
+      return simplified
+    }
+
+    return coords
+  } catch {
+    return null
+  }
+}
+
+// ── Fallback linear-interpolated coordinates ─────────────────────────────
+
+const kadawathaFallback: [number, number][] = [
+  [6.9350,79.8485], [6.9358,79.8498], [6.9368,79.8512], [6.9380,79.8525],
+  [6.9395,79.8545], [6.9410,79.8568], [6.9428,79.8590], [6.9445,79.8612],
+  [6.9462,79.8635], [6.9480,79.8658], [6.9495,79.8675], [6.9510,79.8692],
+  [6.9528,79.8710], [6.9545,79.8730], [6.9560,79.8748], [6.9578,79.8765],
+  [6.9595,79.8782], [6.9612,79.8800], [6.9630,79.8818], [6.9645,79.8835],
+  [6.9660,79.8850], [6.9678,79.8865], [6.9695,79.8880], [6.9710,79.8898],
+  [6.9725,79.8915], [6.9740,79.8932], [6.9750,79.8950], [6.9755,79.8970],
+  [6.9758,79.8990], [6.9760,79.9010], [6.9750,79.9030],
+]
+
+const kiribathgodaFallback: [number, number][] = [
+  [6.9770,79.8930], [6.9772,79.8945], [6.9775,79.8960], [6.9778,79.8975],
+  [6.9782,79.8990], [6.9788,79.9000], [6.9795,79.9008], [6.9802,79.9015],
+  [6.9808,79.9020], [6.9805,79.9025], [6.9800,79.9028], [6.9795,79.9030],
+  [6.9790,79.9032], [6.9785,79.9033], [6.9780,79.9032], [6.9775,79.9030],
+  [6.9770,79.9028], [6.9765,79.9028], [6.9760,79.9030], [6.9755,79.9032],
+  [6.9750,79.9030],
+]
+
+const colomboFortFallback: [number, number][] = [
+  [6.9335,79.8468], [6.9340,79.8475], [6.9345,79.8485], [6.9350,79.8498],
+  [6.9360,79.8515], [6.9368,79.8535], [6.9375,79.8555], [6.9380,79.8575],
+  [6.9385,79.8595], [6.9390,79.8615], [6.9395,79.8635], [6.9400,79.8655],
+  [6.9405,79.8675], [6.9410,79.8695], [6.9415,79.8715], [6.9420,79.8735],
+  [6.9425,79.8755], [6.9430,79.8775], [6.9435,79.8795], [6.9445,79.8812],
+  [6.9460,79.8830], [6.9478,79.8848], [6.9495,79.8865], [6.9512,79.8882],
+  [6.9530,79.8900], [6.9548,79.8918], [6.9565,79.8935], [6.9582,79.8952],
+  [6.9600,79.8970], [6.9620,79.8988], [6.9640,79.9002], [6.9660,79.9012],
+  [6.9680,79.9020], [6.9700,79.9028], [6.9725,79.9032], [6.9750,79.9030],
+]
+
+// ── Key waypoints for OSRM routing ───────────────────────────────────────
+
+const kadawathaWaypoints: [number, number][] = [
+  [6.9350, 79.8485], // Kadawatha Town
+  [6.9480, 79.8658], // Mabola
+  [6.9630, 79.8818], // Wattala
+  [6.9710, 79.8898], // Kelaniya Bridge
+  [6.9750, 79.9030], // University of Kelaniya
+]
+
+const kiribathgodaWaypoints: [number, number][] = [
+  [6.9770, 79.8930], // Kiribathgoda Town
+  [6.9782, 79.8990], // Kadawatha Road
+  [6.9802, 79.9015], // Makola
+  [6.9785, 79.9033], // Kelaniya
+  [6.9750, 79.9030], // University of Kelaniya
+]
+
+const colomboFortWaypoints: [number, number][] = [
+  [6.9335, 79.8468], // Colombo Fort
+  [6.9370, 79.8510], // Pettah
+  [6.9385, 79.8620], // Maradana
+  [6.9405, 79.8720], // Dematagoda
+  [6.9720, 79.9020], // Kelaniya
+  [6.9750, 79.9030], // University of Kelaniya
+]
+
+// ── Seed handler ─────────────────────────────────────────────────────────
+
 export async function POST(request: NextRequest) {
   try {
     // Check if force re-seed is requested
@@ -30,29 +140,22 @@ export async function POST(request: NextRequest) {
     const now = new Date()
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
-    // ── Detailed route coordinates ──────────────────────────────────────────
+    // ── Get road-following routes from OSRM (with fallback) ────────────────
+    console.log('Fetching road-following routes from OSRM...')
 
-    // Kadawatha → University of Kelaniya (31 points along actual roads)
-    const kadawathaRouteCoords: [number, number][] = [
-      [6.9350,79.8485], [6.9358,79.8498], [6.9368,79.8512], [6.9380,79.8525],
-      [6.9395,79.8545], [6.9410,79.8568], [6.9428,79.8590], [6.9445,79.8612],
-      [6.9462,79.8635], [6.9480,79.8658], [6.9495,79.8675], [6.9510,79.8692],
-      [6.9528,79.8710], [6.9545,79.8730], [6.9560,79.8748], [6.9578,79.8765],
-      [6.9595,79.8782], [6.9612,79.8800], [6.9630,79.8818], [6.9645,79.8835],
-      [6.9660,79.8850], [6.9678,79.8865], [6.9695,79.8880], [6.9710,79.8898],
-      [6.9725,79.8915], [6.9740,79.8932], [6.9750,79.8950], [6.9755,79.8970],
-      [6.9758,79.8990], [6.9760,79.9010], [6.9750,79.9030],
-    ]
+    const [kadawathaOSRM, kiribathgodaOSRM, colomboFortOSRM] = await Promise.all([
+      getOSRMRoute(kadawathaWaypoints),
+      getOSRMRoute(kiribathgodaWaypoints),
+      getOSRMRoute(colomboFortWaypoints),
+    ])
 
-    // Kiribathgoda → University of Kelaniya (21 points along actual roads)
-    const kiribathgodaRouteCoords: [number, number][] = [
-      [6.9770,79.8930], [6.9772,79.8945], [6.9775,79.8960], [6.9778,79.8975],
-      [6.9782,79.8990], [6.9788,79.9000], [6.9795,79.9008], [6.9802,79.9015],
-      [6.9808,79.9020], [6.9805,79.9025], [6.9800,79.9028], [6.9795,79.9030],
-      [6.9790,79.9032], [6.9785,79.9033], [6.9780,79.9032], [6.9775,79.9030],
-      [6.9770,79.9028], [6.9765,79.9028], [6.9760,79.9030], [6.9755,79.9032],
-      [6.9750,79.9030],
-    ]
+    const kadawathaRouteCoords: [number, number][] = kadawathaOSRM ?? kadawathaFallback
+    const kiribathgodaRouteCoords: [number, number][] = kiribathgodaOSRM ?? kiribathgodaFallback
+    const colomboFortRouteCoords: [number, number][] = colomboFortOSRM ?? colomboFortFallback
+
+    console.log(`OSRM routes: Kadawatha=${kadawathaRouteCoords.length}pts${kadawathaOSRM ? ' (OSRM)' : ' (fallback)'}, Kiribathgoda=${kiribathgodaRouteCoords.length}pts${kiribathgodaOSRM ? ' (OSRM)' : ' (fallback)'}, ColomboFort=${colomboFortRouteCoords.length}pts${colomboFortOSRM ? ' (OSRM)' : ' (fallback)'}`)
+
+    // ── Route stops ────────────────────────────────────────────────────────
 
     // Kadawatha Route stops with estimated minutes
     const kadawathaStops = [
@@ -70,6 +173,16 @@ export async function POST(request: NextRequest) {
       { name: 'Makola', lat: 6.9802, lng: 79.9015, order: 3, estimatedMinutes: 10 },
       { name: 'Kelaniya', lat: 6.9785, lng: 79.9033, order: 4, estimatedMinutes: 15 },
       { name: 'University of Kelaniya', lat: 6.9750, lng: 79.9030, order: 5, estimatedMinutes: 20 },
+    ]
+
+    // Colombo Fort Route stops with estimated minutes
+    const colomboFortStops = [
+      { name: 'Colombo Fort', lat: 6.9335, lng: 79.8468, order: 1, estimatedMinutes: 0 },
+      { name: 'Pettah', lat: 6.9370, lng: 79.8510, order: 2, estimatedMinutes: 5 },
+      { name: 'Maradana', lat: 6.9385, lng: 79.8620, order: 3, estimatedMinutes: 12 },
+      { name: 'Dematagoda', lat: 6.9405, lng: 79.8720, order: 4, estimatedMinutes: 18 },
+      { name: 'Kelaniya', lat: 6.9720, lng: 79.9020, order: 5, estimatedMinutes: 30 },
+      { name: 'University of Kelaniya', lat: 6.9750, lng: 79.9030, order: 6, estimatedMinutes: 35 },
     ]
 
     // Calculate total distance using Haversine for each route
@@ -91,6 +204,7 @@ export async function POST(request: NextRequest) {
 
     const kadawathaDistance = calculateDistance(kadawathaRouteCoords)
     const kiribathgodaDistance = calculateDistance(kiribathgodaRouteCoords)
+    const colomboFortDistance = calculateDistance(colomboFortRouteCoords)
 
     const result = await db.$transaction(async (tx) => {
       // === CREATE USERS ===
@@ -122,6 +236,15 @@ export async function POST(request: NextRequest) {
         },
       })
 
+      const driverKamal = await tx.user.create({
+        data: {
+          name: 'Kamal Jayasuriya',
+          phone: '0774567890',
+          password: '123456',
+          role: 'DRIVER',
+        },
+      })
+
       // === CREATE STUDENTS ===
       const studentData = [
         { name: 'Kavindi Rajapaksa', phone: '0712345001', paymentType: 'MONTHLY', monthlyAmount: 2500, dailyAmount: null },
@@ -136,6 +259,10 @@ export async function POST(request: NextRequest) {
         { name: 'Lahiru Rathnayake', phone: '0712345010', paymentType: 'DAILY', monthlyAmount: null, dailyAmount: 70 },
         { name: 'Malini Fonseka', phone: '0712345011', paymentType: 'MONTHLY', monthlyAmount: 2800, dailyAmount: null },
         { name: 'Ashan De Silva', phone: '0712345012', paymentType: 'DAILY', monthlyAmount: null, dailyAmount: 80 },
+        // Students for Colombo Fort route
+        { name: 'Samanthi Herath', phone: '0712345013', paymentType: 'MONTHLY', monthlyAmount: 3500, dailyAmount: null },
+        { name: 'Dinesh Kumara', phone: '0712345014', paymentType: 'DAILY', monthlyAmount: null, dailyAmount: 100 },
+        { name: 'Thilini Weerasinghe', phone: '0712345015', paymentType: 'MONTHLY', monthlyAmount: 3200, dailyAmount: null },
       ]
 
       const students = []
@@ -198,6 +325,32 @@ export async function POST(request: NextRequest) {
           currentLng: 79.8980,
           ownerId: owner.id,
           driverId: driverSunil.id,
+          active: true,
+        },
+      })
+
+      const busColomboFort = await tx.bus.create({
+        data: {
+          plateNumber: 'WP CAB-9012',
+          name: 'Colombo Fort Route',
+          capacity: 56,
+          routeName: 'Colombo Fort - University of Kelaniya',
+          routeStart: 'Colombo Fort',
+          routeEnd: 'University of Kelaniya',
+          routeStops: 'Colombo Fort,Pettah,Maradana,Dematagoda,Kelaniya,University of Kelaniya',
+          routeCoordinates: JSON.stringify(colomboFortRouteCoords),
+          routeStopCoordinates: JSON.stringify({
+            'Colombo Fort': [6.9335, 79.8468],
+            'Pettah': [6.9370, 79.8510],
+            'Maradana': [6.9385, 79.8620],
+            'Dematagoda': [6.9405, 79.8720],
+            'Kelaniya': [6.9720, 79.9020],
+            'University of Kelaniya': [6.9750, 79.9030],
+          }),
+          currentLat: 6.9385,
+          currentLng: 79.8620,
+          ownerId: owner.id,
+          driverId: driverKamal.id,
           active: true,
         },
       })
@@ -268,11 +421,51 @@ export async function POST(request: NextRequest) {
         },
       })
 
+      // Colombo Fort Forward Route
+      await tx.route.create({
+        data: {
+          busId: busColomboFort.id,
+          name: 'Colombo Fort - University of Kelaniya',
+          direction: 'forward',
+          coordinates: JSON.stringify(colomboFortRouteCoords.map(([lat, lng]) => [lng, lat])),
+          stops: JSON.stringify(colomboFortStops),
+          totalDistance: colomboFortDistance,
+          estimatedDuration: 35,
+          isActive: true,
+        },
+      })
+
+      // Colombo Fort Return Route
+      await tx.route.create({
+        data: {
+          busId: busColomboFort.id,
+          name: 'University of Kelaniya - Colombo Fort',
+          direction: 'return',
+          coordinates: JSON.stringify([...colomboFortRouteCoords].reverse().map(([lat, lng]) => [lng, lat])),
+          stops: JSON.stringify([...colomboFortStops].reverse().map((s, i) => ({
+            ...s,
+            order: i + 1,
+            estimatedMinutes: 35 - s.estimatedMinutes,
+          }))),
+          totalDistance: colomboFortDistance,
+          estimatedDuration: 35,
+          isActive: true,
+        },
+      })
+
       // === CREATE SUBSCRIPTIONS ===
       const subscriptions = []
       for (let i = 0; i < students.length; i++) {
         const s = students[i]
-        const busId = i < 7 ? busKadawatha.id : busKiribathgoda.id
+        // First 7 students → Kadawatha, next 5 → Kiribathgoda, last 3 → Colombo Fort
+        let busId: string
+        if (i < 7) {
+          busId = busKadawatha.id
+        } else if (i < 12) {
+          busId = busKiribathgoda.id
+        } else {
+          busId = busColomboFort.id
+        }
         const startDate = new Date(2025, 0, 1) // Jan 1, 2025
 
         const subscription = await tx.subscription.create({
@@ -294,8 +487,19 @@ export async function POST(request: NextRequest) {
       for (let i = 0; i < students.length; i++) {
         const s = students[i]
         const sub = subscriptions[i]
-        const busId = i < 7 ? busKadawatha.id : busKiribathgoda.id
-        const collectorId = i < 7 ? driverNimal.id : driverSunil.id
+        // First 7 students → Kadawatha (Nimal), next 5 → Kiribathgoda (Sunil), last 3 → Colombo Fort (Kamal)
+        let busId: string
+        let collectorId: string
+        if (i < 7) {
+          busId = busKadawatha.id
+          collectorId = driverNimal.id
+        } else if (i < 12) {
+          busId = busKiribathgoda.id
+          collectorId = driverSunil.id
+        } else {
+          busId = busColomboFort.id
+          collectorId = driverKamal.id
+        }
 
         if (s.paymentType === 'MONTHLY') {
           const hasPaid = [0, 2, 4].includes(i)
@@ -350,8 +554,13 @@ export async function POST(request: NextRequest) {
         { busId: busKiribathgoda.id, category: 'FUEL', amount: 11000, description: 'Diesel refill - mid month', date: new Date(now.getFullYear(), now.getMonth(), 14), recordedById: owner.id },
         { busId: busKiribathgoda.id, category: 'MAINTENANCE', amount: 8500, description: 'Brake pad replacement', date: new Date(now.getFullYear(), now.getMonth(), 8), recordedById: owner.id },
         { busId: busKiribathgoda.id, category: 'SALARY', amount: 35000, description: 'Driver salary - Sunil Fernando', date: new Date(now.getFullYear(), now.getMonth(), 1), recordedById: owner.id },
+        { busId: busColomboFort.id, category: 'FUEL', amount: 16000, description: 'Diesel refill - full tank', date: new Date(now.getFullYear(), now.getMonth(), 1), recordedById: owner.id },
+        { busId: busColomboFort.id, category: 'FUEL', amount: 13000, description: 'Diesel refill - mid month', date: new Date(now.getFullYear(), now.getMonth(), 13), recordedById: owner.id },
+        { busId: busColomboFort.id, category: 'MAINTENANCE', amount: 4500, description: 'Tire rotation and alignment', date: new Date(now.getFullYear(), now.getMonth(), 7), recordedById: owner.id },
+        { busId: busColomboFort.id, category: 'SALARY', amount: 38000, description: 'Driver salary - Kamal Jayasuriya', date: new Date(now.getFullYear(), now.getMonth(), 1), recordedById: owner.id },
         { busId: busKadawatha.id, category: 'OTHER', amount: 2000, description: 'Bus wash and cleaning', date: new Date(now.getFullYear(), now.getMonth(), 10), recordedById: owner.id },
         { busId: busKiribathgoda.id, category: 'OTHER', amount: 1500, description: 'Route permit renewal', date: new Date(now.getFullYear(), now.getMonth(), 12), recordedById: owner.id },
+        { busId: busColomboFort.id, category: 'OTHER', amount: 1800, description: 'Interior cleaning and sanitization', date: new Date(now.getFullYear(), now.getMonth(), 9), recordedById: owner.id },
       ]
 
       for (const ee of expenseEntries) {
@@ -365,8 +574,10 @@ export async function POST(request: NextRequest) {
         { userId: students[6].id, title: 'Payment Reminder', message: 'Your monthly payment of LKR 3,000 for the Kadawatha Route is due. Please make the payment as soon as possible.', type: 'PAYMENT_REMINDER' },
         { userId: students[8].id, title: 'Payment Reminder', message: 'Your monthly payment of LKR 2,500 for the Kadawatha Route is due. Please make the payment as soon as possible.', type: 'PAYMENT_REMINDER' },
         { userId: students[10].id, title: 'Payment Reminder', message: 'Your monthly payment of LKR 2,800 for the Kiribathgoda Route is due. Please make the payment as soon as possible.', type: 'PAYMENT_REMINDER' },
+        { userId: students[12].id, title: 'Payment Reminder', message: 'Your monthly payment of LKR 3,500 for the Colombo Fort Route is due. Please make the payment as soon as possible.', type: 'PAYMENT_REMINDER' },
         { userId: driverNimal.id, title: 'Route Update', message: 'There is a route detour near Kelaniya Bridge today due to road work. Please follow the alternative route.', type: 'GENERAL' },
         { userId: driverSunil.id, title: 'Maintenance Scheduled', message: 'Bus maintenance has been scheduled for next week. Please coordinate with the owner.', type: 'GENERAL' },
+        { userId: driverKamal.id, title: 'New Route Assigned', message: 'You have been assigned to the Colombo Fort - University of Kelaniya route. Please review the stops and schedule.', type: 'GENERAL' },
       ]
 
       for (const ne of notificationEntries) {
@@ -374,15 +585,18 @@ export async function POST(request: NextRequest) {
       }
 
       return {
-        users: { owner: 1, drivers: 2, students: 12 },
-        buses: 2,
-        routes: 4,
+        users: { owner: 1, drivers: 3, students: 15 },
+        buses: 3,
+        routes: 6,
         subscriptions: subscriptions.length,
         payments: paymentEntries.length,
         expenses: expenseEntries.length,
         notifications: notificationEntries.length,
-        kadawathaRoutePoints: kadawathaRouteCoords.length,
-        kiribathgodaRoutePoints: kiribathgodaRouteCoords.length,
+        routing: {
+          kadawatha: { points: kadawathaRouteCoords.length, source: kadawathaOSRM ? 'osrm' : 'fallback' },
+          kiribathgoda: { points: kiribathgodaRouteCoords.length, source: kiribathgodaOSRM ? 'osrm' : 'fallback' },
+          colomboFort: { points: colomboFortRouteCoords.length, source: colomboFortOSRM ? 'osrm' : 'fallback' },
+        },
       }
     })
 

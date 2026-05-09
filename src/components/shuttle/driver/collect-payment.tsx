@@ -164,7 +164,7 @@ export default function CollectPayment() {
                   <Users className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold">{selectedSub.student?.name}</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{selectedSub.student?.name}</p>
                   <div className="flex gap-1 mt-0.5">
                     <Badge className={`text-[9px] px-1.5 py-0 ${selectedSub.paymentType === 'MONTHLY' ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'}`}>
                       {selectedSub.paymentType === 'MONTHLY' ? 'Monthly' : 'Daily'}
@@ -247,9 +247,9 @@ export default function CollectPayment() {
                 <div key={payment.id} className="flex items-center justify-between py-1.5">
                   <div className="flex items-center gap-2">
                     <CreditCard className="w-4 h-4 text-emerald-500" />
-                    <span className="text-sm">{payment.student?.name || 'Student'}</span>
+                    <span className="text-sm text-gray-900 dark:text-gray-100">{payment.student?.name || 'Student'}</span>
                   </div>
-                  <span className="text-sm font-semibold">{formatLKR(payment.amount)}</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatLKR(payment.amount)}</span>
                 </div>
               ))}
             </div>

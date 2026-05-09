@@ -246,8 +246,8 @@ export default function OwnerReports({ onBack }: ReportsProps) {
   const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-3 py-2 text-xs">
-          <p className="font-semibold text-gray-700 mb-1">{label}</p>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 px-3 py-2 text-xs">
+          <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">{label}</p>
           {payload.map((entry, index) => (
             <p key={index} style={{ color: entry.color }} className="font-medium">
               {entry.name}: {formatLKR(entry.value)}
@@ -262,8 +262,8 @@ export default function OwnerReports({ onBack }: ReportsProps) {
   const PieTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number; payload: { name: string; value: number } }> }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-3 py-2 text-xs">
-          <p className="font-semibold text-gray-700">{payload[0].name}</p>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 px-3 py-2 text-xs">
+          <p className="font-semibold text-gray-700 dark:text-gray-300">{payload[0].name}</p>
           <p className="text-emerald-600 font-medium">{formatLKR(payload[0].value)}</p>
         </div>
       )
@@ -312,7 +312,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
         >
           <ChevronLeft className="w-5 h-5" />
         </Button>
-        <h2 className="text-lg font-bold text-gray-900">Financial Reports</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Financial Reports</h2>
       </motion.div>
 
       {/* Month Selector */}
@@ -333,7 +333,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <div className="text-center">
-                <p className="text-sm font-bold text-gray-900">{monthLabel}</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{monthLabel}</p>
               </div>
               <Button
                 variant="ghost"
@@ -357,41 +357,41 @@ export default function OwnerReports({ onBack }: ReportsProps) {
       >
         <Card className="rounded-2xl border-0 shadow-sm">
           <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm font-semibold text-gray-700">Monthly Overview</CardTitle>
+            <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Monthly Overview</CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-emerald-50 rounded-xl p-3">
+              <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-xl p-3">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-[11px] text-emerald-700 font-medium">Income</span>
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium">Income</span>
                 </div>
-                <p className="text-sm font-bold text-emerald-700">{formatLKR(monthlyOverview.totalIncome)}</p>
+                <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">{formatLKR(monthlyOverview.totalIncome)}</p>
               </div>
-              <div className="bg-red-50 rounded-xl p-3">
+              <div className="bg-red-50 dark:bg-red-900/30 rounded-xl p-3">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <TrendingDown className="w-3.5 h-3.5 text-red-600" />
-                  <span className="text-[11px] text-red-700 font-medium">Expenses</span>
+                  <TrendingDown className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                  <span className="text-[11px] text-red-700 dark:text-red-300 font-medium">Expenses</span>
                 </div>
-                <p className="text-sm font-bold text-red-700">{formatLKR(monthlyOverview.totalExpenses)}</p>
+                <p className="text-sm font-bold text-red-700 dark:text-red-300">{formatLKR(monthlyOverview.totalExpenses)}</p>
               </div>
-              <div className={`rounded-xl p-3 ${monthlyOverview.netProfit >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}>
+              <div className={`rounded-xl p-3 ${monthlyOverview.netProfit >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/30' : 'bg-red-50 dark:bg-red-900/30'}`}>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <DollarSign className={`w-3.5 h-3.5 ${monthlyOverview.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`} />
-                  <span className={`text-[11px] font-medium ${monthlyOverview.netProfit >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                  <DollarSign className={`w-3.5 h-3.5 ${monthlyOverview.netProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`} />
+                  <span className={`text-[11px] font-medium ${monthlyOverview.netProfit >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
                     Net {monthlyOverview.netProfit >= 0 ? 'Profit' : 'Loss'}
                   </span>
                 </div>
-                <p className={`text-sm font-bold ${monthlyOverview.netProfit >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                <p className={`text-sm font-bold ${monthlyOverview.netProfit >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
                   {formatLKR(Math.abs(monthlyOverview.netProfit))}
                 </p>
               </div>
-              <div className="bg-amber-50 rounded-xl p-3">
+              <div className="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-3">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Users className="w-3.5 h-3.5 text-amber-600" />
-                  <span className="text-[11px] text-amber-700 font-medium">Collection</span>
+                  <Users className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  <span className="text-[11px] text-amber-700 dark:text-amber-300 font-medium">Collection</span>
                 </div>
-                <p className="text-sm font-bold text-amber-700">{monthlyOverview.collectionRate}%</p>
+                <p className="text-sm font-bold text-amber-700 dark:text-amber-300">{monthlyOverview.collectionRate}%</p>
               </div>
             </div>
 
@@ -399,9 +399,9 @@ export default function OwnerReports({ onBack }: ReportsProps) {
             <div className="h-[200px] mt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={overviewBarData} barSize={48}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={60} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} width={60} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
                     {overviewBarData.map((entry, index) => (
@@ -423,7 +423,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
       >
         <Card className="rounded-2xl border-0 shadow-sm">
           <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm font-semibold text-gray-700">Per-Bus Breakdown</CardTitle>
+            <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Per-Bus Breakdown</CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
             {busBreakdown.length > 0 ? (
@@ -435,22 +435,22 @@ export default function OwnerReports({ onBack }: ReportsProps) {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.05 * index }}
                   >
-                    <Card className="rounded-xl border border-gray-100 shadow-none">
+                    <Card className="rounded-xl border border-gray-100 dark:border-gray-700 shadow-none">
                       <CardContent className="p-3">
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                            <Bus className="w-4 h-4 text-emerald-600" />
+                          <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/50 flex items-center justify-center">
+                            <Bus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-900 truncate">{bus.name}</p>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{bus.name}</p>
                             <p className="text-[11px] text-muted-foreground">{bus.plateNumber}</p>
                           </div>
                           <Badge
                             variant="secondary"
                             className={`text-[10px] px-2 py-0.5 ${
                               bus.netProfit >= 0
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-red-50 text-red-700'
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
+                                : 'bg-red-50 text-red-700 dark:bg-red-900/50 dark:text-red-300'
                             }`}
                           >
                             {bus.netProfit >= 0 ? 'Profit' : 'Loss'}
@@ -460,21 +460,21 @@ export default function OwnerReports({ onBack }: ReportsProps) {
                         <div className="grid grid-cols-3 gap-2 text-center">
                           <div>
                             <p className="text-[10px] text-muted-foreground">Income</p>
-                            <p className="text-xs font-bold text-emerald-600">{formatLKR(bus.income)}</p>
+                            <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{formatLKR(bus.income)}</p>
                           </div>
                           <div>
                             <p className="text-[10px] text-muted-foreground">Expenses</p>
-                            <p className="text-xs font-bold text-red-600">{formatLKR(bus.expenses)}</p>
+                            <p className="text-xs font-bold text-red-600 dark:text-red-400">{formatLKR(bus.expenses)}</p>
                           </div>
                           <div>
                             <p className="text-[10px] text-muted-foreground">Net</p>
-                            <p className={`text-xs font-bold ${bus.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                            <p className={`text-xs font-bold ${bus.netProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                               {formatLKR(Math.abs(bus.netProfit))}
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50">
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50 dark:border-gray-700">
                           <div className="flex items-center gap-1">
                             <Users className="w-3 h-3 text-gray-400" />
                             <span className="text-[11px] text-muted-foreground">{bus.studentCount} students</span>
@@ -483,7 +483,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
                             <span className="text-[11px] text-muted-foreground">Collection</span>
                             <div className="flex items-center gap-1">
                               <Progress value={bus.collectionRate} className="h-1.5 w-12" />
-                              <span className="text-[11px] font-semibold text-amber-600">{bus.collectionRate}%</span>
+                              <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">{bus.collectionRate}%</span>
                             </div>
                           </div>
                         </div>
@@ -510,7 +510,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
       >
         <Card className="rounded-2xl border-0 shadow-sm">
           <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm font-semibold text-gray-700">Payment Method Breakdown</CardTitle>
+            <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Payment Method Breakdown</CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
             <div className="h-[200px]">
@@ -561,7 +561,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
       >
         <Card className="rounded-2xl border-0 shadow-sm">
           <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm font-semibold text-gray-700">Expense Category Breakdown</CardTitle>
+            <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Expense Category Breakdown</CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
             <div className="h-[200px]">
@@ -609,17 +609,17 @@ export default function OwnerReports({ onBack }: ReportsProps) {
       >
         <Card className="rounded-2xl border-0 shadow-sm">
           <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm font-semibold text-gray-700">6-Month Trend</CardTitle>
+            <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">6-Month Trend</CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
             {monthlyTrend.length > 0 ? (
               <div className="h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={monthlyTrend}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis
                       dataKey="month"
-                      tick={{ fontSize: 10 }}
+                      tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={(v: string) => {
@@ -628,7 +628,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
                         return monthNames[parseInt(parts[1]) - 1] || v
                       }}
                     />
-                    <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={55} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
+                    <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} width={55} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10 }} />
                     <Line type="monotone" dataKey="income" stroke={INCOME_COLOR} strokeWidth={2} dot={{ r: 3, fill: INCOME_COLOR }} name="Income" />

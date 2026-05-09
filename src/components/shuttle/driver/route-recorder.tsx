@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Circle, Square, MapPin, Plus, Check, X, Trash2,
-  RotateCcw, Save, Bus as BusIcon, Clock, Route
+  RotateCcw, Save, Bus as BusIcon, Clock, Route, Waypoints
 } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { useSharedSocket } from '@/components/shuttle/shared/socket-provider'
@@ -36,6 +36,7 @@ export default function RouteRecorder() {
   const [showStopInput, setShowStopInput] = useState(false)
   const [newStopName, setNewStopName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [snappingToRoad, setSnappingToRoad] = useState(false)
   const [existingRoutes, setExistingRoutes] = useState<any[]>([])
   const [loadingRoutes, setLoadingRoutes] = useState(true)
 
@@ -245,6 +246,52 @@ export default function RouteRecorder() {
     }
   }, [bus, recordedCoords, recordedStops, routeName, routeDirection, recordStartTime, clearRecording])
 
+  const snapToRoads = useCallback(async () => {
+    if (recordedCoords.length < 2) return
+    setSnappingToRoad(true)
+    try {
+      // Simplify waypoints to ~10 key points for OSRM
+      const step = Math.max(1, Math.floor(recordedCoords.length / 10))
+      const keyWaypoints: [number, number][] = []
+      for (let i = 0; i < recordedCoords.length; i += step) {
+        keyWaypoints.push(recordedCoords[i])
+      }
+      // Always include last point
+      const lastCoord = recordedCoords[recordedCoords.length - 1]
+      if (keyWaypoints[keyWaypoints.length - 1][0] !== lastCoord[0] || keyWaypoints[keyWaypoints.length - 1][1] !== lastCoord[1]) {
+        keyWaypoints.push(lastCoord)
+      }
+
+      const res = await fetch('/api/routing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ waypoints: keyWaypoints }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.coordinates && data.coordinates.length > 1) {
+          // API returns [lng, lat] but we store [lat, lng]
+          const snappedCoords: [number, number][] = data.coordinates.map(
+            (c: [number, number]) => {
+              // If first value > 90, it's longitude
+              if (c[0] > 90) return [c[1], c[0]] as [number, number]
+              return [c[0], c[1]] as [number, number]
+            }
+          )
+          setRecordedCoords(snappedCoords)
+          toast({ title: 'Route Snapped!', description: `${snappedCoords.length} road-following points` })
+        }
+      } else {
+        toast({ title: 'Snap Failed', description: 'Could not snap to roads', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Snap Failed', description: 'Could not snap to roads', variant: 'destructive' })
+    } finally {
+      setSnappingToRoad(false)
+    }
+  }, [recordedCoords])
+
   const deleteRoute = useCallback(async (routeId: string) => {
     try {
       const res = await fetch(`/api/routes?routeId=${routeId}`, { method: 'DELETE' })
@@ -448,9 +495,28 @@ export default function RouteRecorder() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Card className="rounded-2xl border-0 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">Save Route</CardTitle>
+              <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100">Save Route</CardTitle>
             </CardHeader>
             <CardContent className="pb-4 space-y-3">
+              {/* Snap to Roads Button */}
+              <Button
+                onClick={snapToRoads}
+                disabled={snappingToRoad || recordedCoords.length < 2}
+                variant="outline"
+                className="w-full h-10 rounded-xl text-sm font-medium border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
+              >
+                {snappingToRoad ? (
+                  <>
+                    <Route className="w-4 h-4 mr-2 animate-spin" />
+                    Snapping to Roads...
+                  </>
+                ) : (
+                  <>
+                    <Waypoints className="w-4 h-4 mr-2" />
+                    Snap to Roads
+                  </>
+                )}
+              </Button>
               <Input
                 placeholder="Route name (e.g. Kandy - Colombo Express)"
                 value={routeName}

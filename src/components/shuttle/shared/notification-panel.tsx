@@ -117,7 +117,7 @@ export default function NotificationPanel() {
         </h2>
         <div className="flex gap-2">
           {unreadCount > 0 && (
-            <Button variant="outline" size="sm" onClick={markAllRead} className="rounded-xl text-xs h-8">
+            <Button variant="outline" size="sm" onClick={markAllRead} className="rounded-xl text-xs h-8 dark:text-gray-300">
               <Check className="w-3 h-3 mr-1" />
               Mark all read
             </Button>
@@ -150,7 +150,7 @@ export default function NotificationPanel() {
               >
                 <Card
                   className={`rounded-xl border-0 shadow-sm cursor-pointer transition-all ${
-                    notif.read ? 'bg-white dark:bg-card' : 'bg-emerald-50/50 dark:bg-emerald-900/30 border-l-4 border-l-emerald-500'
+                    notif.read ? 'bg-card dark:bg-gray-800' : 'bg-emerald-50/50 dark:bg-emerald-900/30 border-l-4 border-l-emerald-500'
                   }`}
                   onClick={() => !notif.read && markAsRead(notif.id)}
                 >

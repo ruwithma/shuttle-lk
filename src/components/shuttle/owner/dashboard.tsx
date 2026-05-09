@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Users, TrendingUp, TrendingDown, DollarSign, Plus, Receipt, MapPin } from 'lucide-react'
+import { Users, TrendingUp, TrendingDown, DollarSign, Plus, Receipt, MapPin, Bus as BusIcon } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useAppStore } from '@/lib/store'
 import { fetchDashboardData, isCacheFresh } from '@/lib/data-fetcher'
@@ -12,13 +12,15 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import StatCard from '@/components/shuttle/shared/stat-card'
 import RefreshIndicator from '@/components/shuttle/shared/refresh-indicator'
+import { useFleetLocations } from '@/components/shuttle/shared/bus-location-hook'
 import { format } from 'date-fns'
 import type { DashboardStats } from '@/lib/types'
 
 const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
 export default function OwnerDashboard() {
-  const { currentUser, dashboardStats, setDashboardStats, setActiveTab } = useAppStore()
+  const { currentUser, dashboardStats, setDashboardStats, setActiveTab, buses } = useAppStore()
+  const { locations: fleetLocations } = useFleetLocations(currentUser?.id ?? null)
   // Skip loading skeleton if we already have cached data that is fresh
   const [loading, setLoading] = useState(!dashboardStats || !isCacheFresh('OWNER'))
   const [refreshing, setRefreshing] = useState(false)
@@ -156,18 +158,18 @@ export default function OwnerDashboard() {
         >
           <Card className="rounded-2xl border-0 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">Income vs Expenses</CardTitle>
+              <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100">Income vs Expenses</CardTitle>
             </CardHeader>
             <CardContent className="pb-4">
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stats.monthlyData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                    <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} />
+                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                    <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
                     <Tooltip
                       formatter={(value: number) => formatLKR(value)}
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', backgroundColor: 'var(--popover)', color: 'var(--popover-foreground)' }}
                     />
                     <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10 }} />
                     <Bar dataKey="income" fill="#059669" radius={[4, 4, 0, 0]} name="Income" />
@@ -179,6 +181,75 @@ export default function OwnerDashboard() {
           </Card>
         </motion.div>
       )}
+
+      {/* Fleet Overview */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+      >
+        <Card className="rounded-2xl border-0 shadow-sm">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100">Fleet Overview</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setActiveTab('fleet-tracking')}
+                className="text-xs text-emerald-600 dark:text-emerald-400 h-7 px-2"
+              >
+                View Fleet →
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="flex items-center gap-4 mb-3">
+              <div className="flex items-center gap-1.5">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                </span>
+                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                  {fleetLocations.filter(l => l.isLive).length} Live
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="inline-flex rounded-full h-2.5 w-2.5 bg-gray-300 dark:bg-gray-600" />
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                  {fleetLocations.filter(l => !l.isLive).length} Offline
+                </span>
+              </div>
+            </div>
+            {buses.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {buses.map((bus, idx) => {
+                  const loc = fleetLocations.find(l => l.busId === bus.id)
+                  const isLive = loc?.isLive ?? false
+                  return (
+                    <div
+                      key={bus.id}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+                        isLive
+                          ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                          : 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                      }`}
+                      onClick={() => setActiveTab('fleet-tracking')}
+                    >
+                      <BusIcon className="w-3 h-3" />
+                      <span className="truncate max-w-[80px]">{bus.name}</span>
+                      {isLive && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">No buses added yet</p>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Quick Actions */}
       <motion.div
@@ -221,7 +292,7 @@ export default function OwnerDashboard() {
       >
         <Card className="rounded-2xl border-0 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">Recent Payments</CardTitle>
+            <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent Payments</CardTitle>
           </CardHeader>
           <CardContent className="pb-4">
             {stats.recentPayments && stats.recentPayments.length > 0 ? (

@@ -33,7 +33,7 @@ const categoryConfig: Record<ExpenseCategory, { color: string; icon: React.Eleme
   FUEL: { color: 'bg-amber-50 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300', icon: Fuel },
   MAINTENANCE: { color: 'bg-red-50 text-red-700 dark:bg-red-900/50 dark:text-red-300', icon: Wrench },
   SALARY: { color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300', icon: Banknote },
-  OTHER: { color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400', icon: Package },
+  OTHER: { color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300', icon: Package },
 }
 
 export default function ExpenseTracking() {
@@ -214,7 +214,7 @@ export default function ExpenseTracking() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-red-600">-{formatLKR(expense.amount)}</p>
+                        <p className="text-sm font-bold text-red-600 dark:text-red-400">-{formatLKR(expense.amount)}</p>
                         <p className="text-[10px] text-muted-foreground">
                           {expense.date ? format(new Date(expense.date), 'MMM d') : ''}
                         </p>
