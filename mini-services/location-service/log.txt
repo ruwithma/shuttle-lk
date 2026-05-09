@@ -33,3 +33,76 @@ $ bun --hot index.ts
 [connection] socket=apFTlrq9JLH9OPAqAAAD
 [disconnect] socket=apFTlrq9JLH9OPAqAAAD (reason: client namespace disconnect)
 [connection] socket=XGg2YZfSkQedNlb0AAAF
+[connection] socket=wLClLois0dAoqXjyAAAH
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-owner] socket=XGg2YZfSkQedNlb0AAAF joined owner:cmoydogg10000mgfaaukv79uo
+[unsubscribe-owner] socket=XGg2YZfSkQedNlb0AAAF left owner:cmoydogg10000mgfaaukv79uo
+[driver-start] socket=XGg2YZfSkQedNlb0AAAF bus=cmoydoggf000gmgfadtofe0bq driver=Nimal Silva busName=Kadawatha Route owner=cmoydogg10000mgfaaukv79uo
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=37.751 lng=-97.822 speed=- heading=-
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=37.751 lng=-97.822 speed=- heading=-
+[driver-stop] socket=XGg2YZfSkQedNlb0AAAF bus=cmoydoggf000gmgfadtofe0bq owner=cmoydogg10000mgfaaukv79uo
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=XGg2YZfSkQedNlb0AAAF joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=XGg2YZfSkQedNlb0AAAF left bus:cmoydoggf000gmgfadtofe0bq
+🚌 Location tracking WebSocket server running on port 3003
+[driver-start] socket=XGg2YZfSkQedNlb0AAAF bus=cmoydoggf000gmgfadtofe0bq driver=Nimal Silva busName=Kadawatha Route owner=cmoydogg10000mgfaaukv79uo
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=37.751 lng=-97.822 speed=- heading=-
+Received SIGINT signal, shutting down server...
+Received SIGINT signal, shutting down server...
+Received SIGINT signal, shutting down server...
+Received SIGINT signal, shutting down server...
+Location tracking server closed
+$ bun --hot index.ts
+🚌 Location tracking WebSocket server running on port 3003
+[connection] socket=A578rOjWu8FP-ciaAAAB
+[connection] socket=_FQttVdYElB3SzrfAAAD
+🚌 Location tracking WebSocket server running on port 3003
+🚌 Location tracking WebSocket server running on port 3003
+🚌 Location tracking WebSocket server running on port 3003
+Received SIGINT signal, shutting down server...
+Received SIGINT signal, shutting down server...
+Received SIGINT signal, shutting down server...
+Received SIGINT signal, shutting down server...
+Received SIGINT signal, shutting down server...
+Received SIGINT signal, shutting down server...
+Received SIGINT signal, shutting down server...
+Received SIGINT signal, shutting down server...
+Location tracking server closed
+$ bun --hot index.ts
+🚌 Location tracking WebSocket server running on port 3003

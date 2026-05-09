@@ -39,6 +39,8 @@ interface BusMapProps {
   interpolatedPosition?: { lat: number; lng: number } | null
   studentStop?: { name: string; lat: number; lng: number } | null
   eta?: string | null
+  followBus?: boolean
+  showZoomControl?: boolean
 }
 
 export default function BusMap(props: BusMapProps) {

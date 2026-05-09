@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, MapPin, Users, Bus as BusIcon, Clock, ChevronRight,
-  Navigation, Sparkles, X, Wifi, WifiOff, ArrowRight, Star
+  Navigation, Sparkles, X, Wifi, WifiOff, ArrowRight, Star,
+  LocateFixed, Radio,
 } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { Card, CardContent } from '@/components/ui/card'
@@ -12,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import BusMap from '@/components/shuttle/shared/bus-map'
+import { useSharedSocket } from '@/components/shuttle/shared/socket-provider'
 import { formatLKR } from '@/lib/utils'
 
 interface ShuttleResult {
@@ -39,14 +41,81 @@ interface ShuttleResult {
   seatsAvailable: number
 }
 
+// Live bus from WebSocket
+interface LiveBusFromSocket {
+  busId: string
+  lat: number
+  lng: number
+  speed?: number
+  heading?: number
+  busName?: string
+  routeName?: string
+  plateNumber?: string
+  timestamp: number
+}
+
 export default function ShuttleFinder() {
   const { currentUser } = useAppStore()
+  const { getSocket, connected } = useSharedSocket()
   const [query, setQuery] = useState('')
   const [shuttles, setShuttles] = useState<ShuttleResult[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedShuttle, setSelectedShuttle] = useState<ShuttleResult | null>(null)
   const [popularAreas, setPopularAreas] = useState<string[]>([])
   const [usingLocation, setUsingLocation] = useState(false)
+  const [liveBusesFromSocket, setLiveBusesFromSocket] = useState<Map<string, LiveBusFromSocket>>(new Map())
+  const [showLiveMap, setShowLiveMap] = useState(false)
+
+  // Subscribe to all live buses for the real-time map
+  useEffect(() => {
+    const socket = getSocket()
+    if (!socket || !connected) return
+
+    const onConnect = () => {
+      socket.emit('subscribe-all-live')
+    }
+
+    if (socket.connected) {
+      onConnect()
+    }
+
+    socket.on('connect', onConnect)
+
+    socket.on('all-live-buses', (buses: LiveBusFromSocket[]) => {
+      const map = new Map<string, LiveBusFromSocket>()
+      buses.forEach(b => map.set(b.busId, b))
+      setLiveBusesFromSocket(map)
+    })
+
+    socket.on('live-bus-update', (data: LiveBusFromSocket) => {
+      setLiveBusesFromSocket(prev => {
+        const next = new Map(prev)
+        next.set(data.busId, data)
+        return next
+      })
+    })
+
+    socket.on('live-bus-started', (data: { busId: string; busName: string; routeName: string; plateNumber: string; timestamp: number }) => {
+      // Will get full data from next update
+    })
+
+    socket.on('live-bus-stopped', (data: { busId: string }) => {
+      setLiveBusesFromSocket(prev => {
+        const next = new Map(prev)
+        next.delete(data.busId)
+        return next
+      })
+    })
+
+    return () => {
+      socket.off('connect', onConnect)
+      socket.off('all-live-buses')
+      socket.off('live-bus-update')
+      socket.off('live-bus-started')
+      socket.off('live-bus-stopped')
+      socket.emit('unsubscribe-all-live')
+    }
+  }, [getSocket, connected])
 
   // Fetch all active shuttles on mount
   useEffect(() => {
@@ -79,7 +148,6 @@ export default function ShuttleFinder() {
     }
   }, [])
 
-  // Search handler
   const handleSearch = useCallback(() => {
     if (query.trim()) {
       fetchShuttles(query.trim())
@@ -88,7 +156,6 @@ export default function ShuttleFinder() {
     }
   }, [query, fetchShuttles])
 
-  // Use current location
   const useMyLocation = useCallback(() => {
     if (!('geolocation' in navigator)) return
     setUsingLocation(true)
@@ -103,6 +170,51 @@ export default function ShuttleFinder() {
       { enableHighAccuracy: true, timeout: 5000 }
     )
   }, [query, fetchShuttles])
+
+  // Build fleet buses for live map view (combining static shuttle data with live positions)
+  const liveFleetBuses = useMemo(() => {
+    const buses: Array<{
+      busId: string
+      busName: string
+      plateNumber: string
+      lat: number
+      lng: number
+      heading?: number
+      speed?: number
+      isLive: boolean
+      color: string
+    }> = []
+
+    // Merge live WebSocket data with static shuttle data
+    for (const shuttle of shuttles) {
+      const liveData = liveBusesFromSocket.get(shuttle.id)
+      if (liveData) {
+        buses.push({
+          busId: shuttle.id,
+          busName: shuttle.name,
+          plateNumber: shuttle.plateNumber,
+          lat: liveData.lat,
+          lng: liveData.lng,
+          heading: liveData.heading,
+          speed: liveData.speed,
+          isLive: true,
+          color: '#10b981',
+        })
+      } else if (shuttle.currentLat && shuttle.currentLng) {
+        buses.push({
+          busId: shuttle.id,
+          busName: shuttle.name,
+          plateNumber: shuttle.plateNumber,
+          lat: shuttle.currentLat,
+          lng: shuttle.currentLng,
+          isLive: shuttle.isLive,
+          color: shuttle.isLive ? '#10b981' : '#9ca3af',
+        })
+      }
+    }
+
+    return buses
+  }, [shuttles, liveBusesFromSocket])
 
   // Parse route for selected shuttle
   const selectedRoutePath = useMemo<[number, number][]>(() => {
@@ -128,8 +240,23 @@ export default function ShuttleFinder() {
     return []
   }, [selectedShuttle])
 
-  const liveBuses = useMemo(() => {
-    if (!selectedShuttle || !selectedShuttle.currentLat || !selectedShuttle.currentLng) return []
+  const selectedLiveBuses = useMemo(() => {
+    if (!selectedShuttle) return []
+    const liveData = liveBusesFromSocket.get(selectedShuttle.id)
+    if (liveData) {
+      return [{
+        busId: selectedShuttle.id,
+        busName: selectedShuttle.name,
+        plateNumber: selectedShuttle.plateNumber,
+        lat: liveData.lat,
+        lng: liveData.lng,
+        heading: liveData.heading,
+        speed: liveData.speed,
+        isLive: true,
+        color: '#10b981',
+      }]
+    }
+    if (!selectedShuttle.currentLat || !selectedShuttle.currentLng) return []
     return [{
       busId: selectedShuttle.id,
       busName: selectedShuttle.name,
@@ -139,14 +266,15 @@ export default function ShuttleFinder() {
       isLive: selectedShuttle.isLive,
       color: '#10b981',
     }]
-  }, [selectedShuttle])
+  }, [selectedShuttle, liveBusesFromSocket])
 
-  // Occupancy color
   const getOccupancyColor = (pct: number) => {
     if (pct >= 90) return 'text-red-600 bg-red-50'
     if (pct >= 70) return 'text-amber-600 bg-amber-50'
     return 'text-emerald-600 bg-emerald-50'
   }
+
+  const liveBusCount = liveBusesFromSocket.size
 
   if (loading) {
     return (
@@ -164,8 +292,21 @@ export default function ShuttleFinder() {
     <div className="p-4 space-y-4">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="text-xl font-bold text-gray-900">Find Shuttles</h2>
-        <p className="text-sm text-muted-foreground">Discover shuttle routes near you</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Find Shuttles</h2>
+            <p className="text-sm text-muted-foreground">Discover routes near you</p>
+          </div>
+          {liveBusCount > 0 && (
+            <Badge className="bg-emerald-50 text-emerald-700 text-[10px] flex items-center gap-1.5 px-2.5 py-1">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              {liveBusCount} Live
+            </Badge>
+          )}
+        </div>
       </motion.div>
 
       {/* Search Bar */}
@@ -194,10 +335,56 @@ export default function ShuttleFinder() {
             disabled={usingLocation}
             className="h-11 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
           >
-            <Navigation className="w-4 h-4" />
+            {usingLocation ? (
+              <LocateFixed className="w-4 h-4 animate-pulse" />
+            ) : (
+              <Navigation className="w-4 h-4" />
+            )}
           </Button>
         </div>
       </motion.div>
+
+      {/* Live Map Toggle */}
+      {liveFleetBuses.length > 0 && !selectedShuttle && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+          <Button
+            variant={showLiveMap ? 'default' : 'outline'}
+            onClick={() => setShowLiveMap(!showLiveMap)}
+            className={`w-full rounded-xl h-10 text-sm font-semibold ${
+              showLiveMap
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+            }`}
+          >
+            <Radio className="w-4 h-4 mr-2" />
+            {showLiveMap ? 'Hide Live Map' : `Show ${liveFleetBuses.length} Buses on Map`}
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Live Map Overview */}
+      <AnimatePresence>
+        {showLiveMap && !selectedShuttle && liveFleetBuses.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <Card className="rounded-2xl border-0 shadow-sm overflow-hidden">
+              <div style={{ height: 280 }}>
+                <BusMap
+                  fleetBuses={liveFleetBuses}
+                  center={[7.0, 79.9]}
+                  zoom={10}
+                  showLiveBus={false}
+                  className="rounded-none"
+                />
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Popular Areas */}
       {!selectedShuttle && popularAreas.length > 0 && !query && (
@@ -235,7 +422,7 @@ export default function ShuttleFinder() {
                 <BusMap
                   routePath={selectedRoutePath}
                   stops={selectedStops}
-                  fleetBuses={liveBuses}
+                  fleetBuses={selectedLiveBuses}
                   showLiveBus={false}
                   center={selectedRoutePath.length > 0 ? selectedRoutePath[0] : [7.0, 79.9]}
                   zoom={12}
@@ -313,7 +500,7 @@ export default function ShuttleFinder() {
                     <p className="text-[10px]">Full</p>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-2.5 text-center">
-                    {selectedShuttle.isLive ? (
+                    {selectedShuttle.isLive || liveBusesFromSocket.has(selectedShuttle.id) ? (
                       <>
                         <Wifi className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
                         <p className="text-sm font-bold text-emerald-600">Live</p>
@@ -372,7 +559,7 @@ export default function ShuttleFinder() {
                   </div>
                 )}
 
-                {/* Contact / Subscribe Button */}
+                {/* Subscribe Button */}
                 <Button className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
                   <Star className="w-4 h-4 mr-2" />
                   Subscribe to This Shuttle
@@ -394,71 +581,78 @@ export default function ShuttleFinder() {
 
           {shuttles.length > 0 ? (
             <div className="space-y-3">
-              {shuttles.map((shuttle, index) => (
-                <motion.div
-                  key={shuttle.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <Card
-                    className="rounded-2xl border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => setSelectedShuttle(shuttle)}
+              {shuttles.map((shuttle, index) => {
+                const isActuallyLive = shuttle.isLive || liveBusesFromSocket.has(shuttle.id)
+                return (
+                  <motion.div
+                    key={shuttle.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <BusIcon className="w-5 h-5 text-emerald-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-gray-900 text-sm truncate">{shuttle.name}</h3>
-                            {shuttle.isLive && (
-                              <Badge className="text-[9px] px-1.5 py-0 bg-emerald-100 text-emerald-700 flex items-center gap-1">
-                                <span className="relative flex h-1.5 w-1.5">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-                                </span>
-                                Live
-                              </Badge>
-                            )}
+                    <Card
+                      className={`rounded-2xl border-0 shadow-sm cursor-pointer hover:shadow-md transition-all ${
+                        isActuallyLive ? 'ring-1 ring-emerald-200' : ''
+                      }`}
+                      onClick={() => setSelectedShuttle(shuttle)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                            isActuallyLive ? 'bg-emerald-100' : 'bg-gray-50'
+                          }`}>
+                            <BusIcon className={`w-5 h-5 ${isActuallyLive ? 'text-emerald-600' : 'text-gray-400'}`} />
                           </div>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-                            <p className="text-xs text-muted-foreground truncate">
-                              {shuttle.routeStart} → {shuttle.routeEnd}
-                            </p>
-                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-gray-900 text-sm truncate">{shuttle.name}</h3>
+                              {isActuallyLive && (
+                                <Badge className="text-[9px] px-1.5 py-0 bg-emerald-100 text-emerald-700 flex items-center gap-1">
+                                  <span className="relative flex h-1.5 w-1.5">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                                  </span>
+                                  Live
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                              <p className="text-xs text-muted-foreground truncate">
+                                {shuttle.routeStart} → {shuttle.routeEnd}
+                              </p>
+                            </div>
 
-                          {/* Bottom row */}
-                          <div className="flex items-center gap-3 mt-2">
-                            <div className="flex items-center gap-1">
-                              <Users className="w-3 h-3 text-gray-400" />
-                              <span className="text-[10px] font-medium text-gray-500">
-                                {shuttle.seatsAvailable} seats
-                              </span>
+                            {/* Bottom row */}
+                            <div className="flex items-center gap-3 mt-2">
+                              <div className="flex items-center gap-1">
+                                <Users className="w-3 h-3 text-gray-400" />
+                                <span className="text-[10px] font-medium text-gray-500">
+                                  {shuttle.seatsAvailable} seats
+                                </span>
+                              </div>
+                              <div className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getOccupancyColor(shuttle.occupancyPercent)}`}>
+                                {shuttle.occupancyPercent}% full
+                              </div>
+                              {shuttle.priceRange.daily && (
+                                <span className="text-[10px] font-medium text-amber-600">
+                                  Rs. {shuttle.priceRange.daily.min}/day
+                                </span>
+                              )}
+                              {shuttle.priceRange.monthly && !shuttle.priceRange.daily && (
+                                <span className="text-[10px] font-medium text-emerald-600">
+                                  Rs. {shuttle.priceRange.monthly.min}/mo
+                                </span>
+                              )}
                             </div>
-                            <div className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getOccupancyColor(shuttle.occupancyPercent)}`}>
-                              {shuttle.occupancyPercent}% full
-                            </div>
-                            {shuttle.priceRange.daily && (
-                              <span className="text-[10px] font-medium text-amber-600">
-                                Rs. {shuttle.priceRange.daily.min}/day
-                              </span>
-                            )}
-                            {shuttle.priceRange.monthly && !shuttle.priceRange.daily && (
-                              <span className="text-[10px] font-medium text-emerald-600">
-                                Rs. {shuttle.priceRange.monthly.min}/mo
-                              </span>
-                            )}
                           </div>
+                          <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0 mt-1" />
                         </div>
-                        <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0 mt-1" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )
+              })}
             </div>
           ) : (
             <div className="text-center py-12">

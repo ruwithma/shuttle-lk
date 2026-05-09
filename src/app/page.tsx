@@ -44,8 +44,8 @@ function AppContent() {
   if (!currentUser) return <LoginScreen />
 
   const renderContent = () => {
-    // Shared views
-    if (activeTab === 'find') return <ShuttleFinder />
+    // Student-only views
+    if (activeTab === 'find' && currentUser.role === 'STUDENT') return <ShuttleFinder />
 
     // Owner views
     if (currentUser.role === 'OWNER') {

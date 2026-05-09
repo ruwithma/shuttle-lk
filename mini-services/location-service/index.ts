@@ -24,6 +24,10 @@ interface LiveBusData {
   driverName: string
   busName: string
   ownerId: string
+  routeName?: string
+  routeStart?: string
+  routeEnd?: string
+  plateNumber?: string
   timestamp: number
 }
 
@@ -61,12 +65,18 @@ interface DriverStartPayload {
   ownerId: string
   driverName: string
   busName: string
+  routeName?: string
+  routeStart?: string
+  routeEnd?: string
+  plateNumber?: string
 }
 
 interface DriverStopPayload {
   busId: string
   ownerId: string
 }
+
+// subscribe-all-live: Students subscribe to get all live bus updates (no payload needed)
 
 // ── Helper: find a live bus entry by busId ──────────────────────────────────
 
@@ -85,7 +95,7 @@ io.on('connection', (socket: Socket) => {
   console.log(`[connection] socket=${socket.id}`)
 
   // ── driver-location ────────────────────────────────────────────────────
-  // Driver sends location update → broadcast to bus room & owner room
+  // Driver sends location update → broadcast to bus room, owner room, and all-live room
   socket.on('driver-location', (payload: DriverLocationPayload) => {
     const { busId, lat, lng, speed, heading } = payload
     const timestamp = Date.now()
@@ -99,8 +109,7 @@ io.on('connection', (socket: Socket) => {
       existing.heading = heading ?? existing.heading
       existing.timestamp = timestamp
     } else {
-      // First location from this driver – store with placeholder names
-      // (will be overwritten by driver-start if used correctly)
+      // First location from this driver
       liveBuses.set(socket.id, {
         busId,
         lat,
@@ -132,13 +141,25 @@ io.on('connection', (socket: Socket) => {
       io.to(`owner:${liveData.ownerId}`).emit('bus-location', locationUpdate)
     }
 
+    // Broadcast to all-live subscribers (for student shuttle finder)
+    const publicUpdate = {
+      busId,
+      lat,
+      lng,
+      speed,
+      heading,
+      busName: liveData?.busName || '',
+      routeName: liveData?.routeName || '',
+      timestamp,
+    }
+    io.to('all-live').emit('live-bus-update', publicUpdate)
+
     console.log(
       `[driver-location] bus=${busId} lat=${lat} lng=${lng} speed=${speed ?? '-'} heading=${heading ?? '-'}`
     )
   })
 
   // ── subscribe-bus ──────────────────────────────────────────────────────
-  // Student/Owner joins a bus room to receive location updates
   socket.on('subscribe-bus', (payload: SubscribeBusPayload) => {
     const { busId } = payload
     socket.join(`bus:${busId}`)
@@ -166,7 +187,6 @@ io.on('connection', (socket: Socket) => {
   })
 
   // ── subscribe-owner ────────────────────────────────────────────────────
-  // Owner joins their room to receive updates for all their buses
   socket.on('subscribe-owner', (payload: SubscribeOwnerPayload) => {
     const { ownerId } = payload
     socket.join(`owner:${ownerId}`)
@@ -180,10 +200,37 @@ io.on('connection', (socket: Socket) => {
     console.log(`[unsubscribe-owner] socket=${socket.id} left owner:${ownerId}`)
   })
 
+  // ── subscribe-all-live ─────────────────────────────────────────────────
+  // Students subscribe to get all live bus updates (for shuttle finder)
+  socket.on('subscribe-all-live', () => {
+    socket.join('all-live')
+    console.log(`[subscribe-all-live] socket=${socket.id} joined all-live`)
+
+    // Immediately send all current live buses
+    const buses: LiveBusData[] = Array.from(liveBuses.values())
+    const publicBuses = buses.map(b => ({
+      busId: b.busId,
+      lat: b.lat,
+      lng: b.lng,
+      speed: b.speed,
+      heading: b.heading,
+      busName: b.busName,
+      routeName: b.routeName || '',
+      plateNumber: b.plateNumber || '',
+      timestamp: b.timestamp,
+    }))
+    socket.emit('all-live-buses', publicBuses)
+  })
+
+  // ── unsubscribe-all-live ───────────────────────────────────────────────
+  socket.on('unsubscribe-all-live', () => {
+    socket.leave('all-live')
+    console.log(`[unsubscribe-all-live] socket=${socket.id} left all-live`)
+  })
+
   // ── driver-start ───────────────────────────────────────────────────────
-  // Driver starts a trip → store in live map & notify owner
   socket.on('driver-start', (payload: DriverStartPayload) => {
-    const { busId, ownerId, driverName, busName } = payload
+    const { busId, ownerId, driverName, busName, routeName, routeStart, routeEnd, plateNumber } = payload
     const timestamp = Date.now()
 
     // Upsert live bus entry
@@ -197,22 +244,32 @@ io.on('connection', (socket: Socket) => {
       driverName,
       busName,
       ownerId,
+      routeName: routeName || existing?.routeName,
+      routeStart: routeStart || existing?.routeStart,
+      routeEnd: routeEnd || existing?.routeEnd,
+      plateNumber: plateNumber || existing?.plateNumber,
       timestamp,
     })
+
+    const startEvent = {
+      busId,
+      driverName,
+      busName,
+      timestamp,
+    }
 
     // Notify owner room
-    io.to(`owner:${ownerId}`).emit('driver-started', {
-      busId,
-      driverName,
-      busName,
-      timestamp,
-    })
+    io.to(`owner:${ownerId}`).emit('driver-started', startEvent)
 
     // Also notify anyone already subscribed to this bus
-    io.to(`bus:${busId}`).emit('driver-started', {
+    io.to(`bus:${busId}`).emit('driver-started', startEvent)
+
+    // Notify all-live subscribers
+    io.to('all-live').emit('live-bus-started', {
       busId,
-      driverName,
       busName,
+      routeName: routeName || '',
+      plateNumber: plateNumber || '',
       timestamp,
     })
 
@@ -222,7 +279,6 @@ io.on('connection', (socket: Socket) => {
   })
 
   // ── driver-stop ────────────────────────────────────────────────────────
-  // Driver stops a trip → remove from live map & notify owner
   socket.on('driver-stop', (payload: DriverStopPayload) => {
     const { busId, ownerId } = payload
 
@@ -245,11 +301,16 @@ io.on('connection', (socket: Socket) => {
       timestamp,
     })
 
+    // Notify all-live subscribers
+    io.to('all-live').emit('live-bus-stopped', {
+      busId,
+      timestamp,
+    })
+
     console.log(`[driver-stop] socket=${socket.id} bus=${busId} owner=${ownerId}`)
   })
 
   // ── get-live-buses ─────────────────────────────────────────────────────
-  // Returns list of currently live buses with their last known locations
   socket.on('get-live-buses', () => {
     const buses: LiveBusData[] = Array.from(liveBuses.values())
     socket.emit('live-buses', buses)
@@ -271,6 +332,13 @@ io.on('connection', (socket: Socket) => {
 
       // Notify bus subscribers
       io.to(`bus:${liveData.busId}`).emit('driver-stopped', {
+        busId: liveData.busId,
+        timestamp: Date.now(),
+        reason: 'disconnect',
+      })
+
+      // Notify all-live subscribers
+      io.to('all-live').emit('live-bus-stopped', {
         busId: liveData.busId,
         timestamp: Date.now(),
         reason: 'disconnect',

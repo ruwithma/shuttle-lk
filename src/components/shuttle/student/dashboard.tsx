@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle2, AlertCircle, Clock, CreditCard, Bus as BusIcon, MapPin, Radio, Navigation } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Clock, CreditCard, Bus as BusIcon, MapPin, Radio, Navigation, Search, Sparkles } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { fetchDashboardData, isCacheFresh } from '@/lib/data-fetcher'
 import { useBusLocation } from '@/components/shuttle/shared/bus-location-hook'
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
+import type { StudentDashboard as StudentDashboardType } from '@/lib/types'
 
 const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
@@ -77,6 +78,32 @@ export default function StudentDashboard() {
     return 'Good evening'
   }
 
+  // Calculate route progress (0-100) based on where bus is on its route
+  const routeProgress = useMemo(() => {
+    if (!isLive || !location || !data.bus?.routeCoordinates) return 0
+    try {
+      const coords = JSON.parse(data.bus.routeCoordinates || '[]')
+      if (!Array.isArray(coords) || coords.length < 2) return 0
+
+      // Find closest point on route
+      let closestIdx = 0
+      let closestDist = Infinity
+      for (let i = 0; i < coords.length; i++) {
+        const d = Math.sqrt(
+          Math.pow(coords[i][0] - location.lat, 2) +
+          Math.pow(coords[i][1] - location.lng, 2)
+        )
+        if (d < closestDist) {
+          closestDist = d
+          closestIdx = i
+        }
+      }
+      return Math.round((closestIdx / (coords.length - 1)) * 100)
+    } catch {
+      return 0
+    }
+  }, [isLive, location, data.bus?.routeCoordinates])
+
   if (loading) {
     return (
       <div className="p-4 space-y-4">
@@ -96,11 +123,84 @@ export default function StudentDashboard() {
         </h2>
       </motion.div>
 
-      {/* Payment Status */}
+      {/* Live Bus Status - Uber-style card */}
+      {isLive && location && (
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.05 }}>
+          <Card className="rounded-2xl border-0 shadow-lg bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 text-white overflow-hidden relative">
+            {/* Decorative background circles */}
+            <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full" />
+            <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-white/5 rounded-full" />
+            <CardContent className="p-5 relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                    <span className="text-sm font-bold text-emerald-100 uppercase tracking-wider">Your bus is live</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-black">{location.speed ? Math.round(location.speed) : '--'}</span>
+                    <span className="text-sm font-medium text-emerald-200">km/h</span>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setActiveTab('route')}
+                  size="sm"
+                  className="bg-white/20 hover:bg-white/30 text-white border-0 rounded-xl text-xs font-bold backdrop-blur-sm"
+                >
+                  <MapPin className="w-3.5 h-3.5 mr-1" />
+                  Track Live
+                </Button>
+              </div>
+              {/* Dynamic progress bar based on route position */}
+              <div className="mt-2">
+                <div className="flex justify-between text-[10px] font-semibold text-emerald-200 mb-1">
+                  <span>{data.bus?.routeStart || 'Start'}</span>
+                  <span>{routeProgress}%</span>
+                  <span>{data.bus?.routeEnd || 'End'}</span>
+                </div>
+                <div className="bg-white/20 rounded-full h-2 overflow-hidden">
+                  <motion.div
+                    className="bg-white rounded-full h-2"
+                    initial={{ width: '0%' }}
+                    animate={{ width: `${routeProgress}%` }}
+                    transition={{ duration: 1.5, ease: 'easeOut' }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Find Shuttles CTA - Prominent card for students */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <Card
+          className="rounded-2xl border-2 border-dashed border-emerald-300 bg-gradient-to-br from-emerald-50 to-teal-50 cursor-pointer hover:shadow-md transition-all hover:border-emerald-400"
+          onClick={() => setActiveTab('find')}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200">
+                <Search className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900 text-base">Find Shuttles</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Discover routes near you & track live buses</p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">New</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Payment Status */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
         <Card className={`rounded-2xl border-2 shadow-sm ${status.color}`}>
-          <CardContent className="p-6 text-center">
-            <StatusIcon className="w-12 h-12 mx-auto mb-2" />
+          <CardContent className="p-5 text-center">
+            <StatusIcon className="w-10 h-10 mx-auto mb-2" />
             <Badge className={`text-sm px-4 py-1 ${status.badge}`}>
               {status.label}
             </Badge>
@@ -112,44 +212,6 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
       </motion.div>
-
-      {/* Live Bus Status - Uber-style card when bus is live */}
-      {isLive && location && (
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 }}>
-          <Card className="rounded-2xl border-0 shadow-md bg-gradient-to-r from-emerald-500 to-teal-500 text-white overflow-hidden">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Navigation className="w-4 h-4" />
-                    <span className="text-sm font-semibold text-emerald-100">Your bus is on the way</span>
-                  </div>
-                  <p className="text-sm text-emerald-100">
-                    {location.speed ? `${Math.round(location.speed)} km/h` : 'Moving'}
-                  </p>
-                </div>
-                <Button
-                  onClick={() => setActiveTab('route')}
-                  size="sm"
-                  className="bg-white/20 hover:bg-white/30 text-white border-0 rounded-xl text-xs font-semibold"
-                >
-                  <MapPin className="w-3.5 h-3.5 mr-1" />
-                  Track Live
-                </Button>
-              </div>
-              {/* Animated progress bar */}
-              <div className="mt-3 bg-white/20 rounded-full h-1.5">
-                <motion.div
-                  className="bg-white rounded-full h-1.5"
-                  initial={{ width: '0%' }}
-                  animate={{ width: '50%' }}
-                  transition={{ duration: 1.5, ease: 'easeOut' }}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
 
       {/* Subscription Info */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
@@ -189,7 +251,7 @@ export default function StudentDashboard() {
         </Card>
       </motion.div>
 
-      {/* Bus Status & Track Bus */}
+      {/* Bus Offline Status */}
       {!isLive && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <Card className="rounded-2xl border-0 shadow-sm">
@@ -197,7 +259,7 @@ export default function StudentDashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-gray-400" />
+                    <Radio className="w-5 h-5 text-gray-400" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-500">Bus is offline</p>
@@ -210,7 +272,7 @@ export default function StudentDashboard() {
                   variant="outline"
                   className="rounded-xl text-xs"
                 >
-                  <Radio className="w-3.5 h-3.5 mr-1" />
+                  <MapPin className="w-3.5 h-3.5 mr-1" />
                   View Route
                 </Button>
               </div>

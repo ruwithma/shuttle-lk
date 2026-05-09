@@ -24,7 +24,7 @@ interface TabConfig {
 
 const TABS: TabConfig[] = [
   { id: 'dashboard', label: 'Home', icon: LayoutDashboard, roles: ['OWNER', 'DRIVER', 'STUDENT'] },
-  { id: 'find', label: 'Find', icon: Search, roles: ['OWNER', 'DRIVER', 'STUDENT'] },
+  { id: 'find', label: 'Find', icon: Search, roles: ['STUDENT'] },
   { id: 'buses', label: 'Buses', icon: Bus, roles: ['OWNER'] },
   { id: 'students', label: 'Students', icon: Users, roles: ['OWNER'] },
   { id: 'payments', label: 'Payments', icon: CreditCard, roles: ['OWNER', 'STUDENT'] },

@@ -122,3 +122,58 @@ Stage Summary:
 - All components use shared socket (no duplicate connections)
 - Faster update intervals for smoother tracking
 - All code passes lint checks
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Uber-quality live tracking upgrades, Find tab student-only, performance optimizations
+
+Work Log:
+- Restricted "Find" tab to STUDENT role only in `bottom-nav.tsx`
+- Updated `page.tsx` to only render ShuttleFinder for STUDENT role
+- Rewrote `animated-marker.tsx` with Uber-quality features:
+  - Ease-out quintic interpolation (1 - (1-t)^5) for buttery smooth movement
+  - Uber-style bus icon with refined SVG
+  - Double pulse ring animation (staggered for depth effect)
+  - Dark label/speed badges with SF Pro font stack
+  - Smoother heading rotation (0.6s cubic-bezier spring)
+  - Adaptive animation duration (600ms-2500ms based on distance)
+- Rewrote `bus-map-inner.tsx` with major upgrades:
+  - Camera follow mode (`CameraFollower` component) that smoothly pans to follow the bus
+  - CartoDB Voyager tiles (much cleaner than default OSM, Uber-like aesthetic)
+  - Better bounds fitting with one-time initial fit
+  - Cleaner stop markers and student stop with dark ETA badges
+- Upgraded `bus-map.tsx` wrapper to pass through new props (`followBus`, `showZoomControl`)
+- Rewrote `student/dashboard.tsx`:
+  - Prominent "Find Shuttles" CTA card with gradient icon and "New" badge
+  - Dynamic route progress bar (calculated from actual bus position on route, not hardcoded 50%)
+  - Decorative background circles on live card
+  - Better visual hierarchy
+- Rewrote `student/my-route.tsx`:
+  - Camera follow toggle button ("Follow Bus" / "Following")
+  - Dynamic route progress bar calculated from actual GPS position
+  - Uber-style ETA card with larger speed display
+  - Enhanced gradient design with decorative circles
+- Upgraded `shuttle-finder.tsx`:
+  - Real-time live bus updates via WebSocket (`subscribe-all-live` room)
+  - Live bus count badge in header
+  - "Show X Buses on Map" button for live map overview
+  - Merged static shuttle data with live WebSocket positions
+  - Live buses get green ring highlight in shuttle list
+  - Better location button with LocateFixed icon when loading
+- Upgraded `location-service/index.ts`:
+  - Added `subscribe-all-live` / `unsubscribe-all-live` events
+  - `all-live` room for broadcasting to shuttle finder
+  - `live-bus-update` event with busName and routeName
+  - `live-bus-started` / `live-bus-stopped` events for all-live subscribers
+  - Rich metadata in driver-start (routeName, routeStart, routeEnd, plateNumber)
+- Updated `driver/dashboard.tsx` to send richer metadata on driver-start
+
+Stage Summary:
+- "Find Shuttles" is now STUDENT-only
+- Uber-quality smooth marker animations with ease-out quintic
+- Camera follow mode for live bus tracking (toggle on student route view)
+- Dynamic route progress (not hardcoded) based on actual GPS position
+- Real-time live bus positions in shuttle finder via WebSocket
+- Cleaner CartoDB Voyager map tiles (Uber-like aesthetic)
+- All code passes lint (only pre-existing spawner.js errors remain)

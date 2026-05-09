@@ -81,6 +81,10 @@ export default function DriverDashboard() {
         ownerId: bus.ownerId,
         driverName: currentUser.name,
         busName: bus.name,
+        routeName: bus.routeName,
+        routeStart: bus.routeStart,
+        routeEnd: bus.routeEnd,
+        plateNumber: bus.plateNumber,
       })
     }
 
