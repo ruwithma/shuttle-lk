@@ -26,6 +26,12 @@ export default function DriverDashboard() {
   const [currentHeading, setCurrentHeading] = useState<number | null>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const simIndexRef = useRef(0)
+  const simulationModeRef = useRef(false)
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    simulationModeRef.current = simulationMode
+  }, [simulationMode])
 
   useEffect(() => {
     loadDashboard()
@@ -153,7 +159,7 @@ export default function DriverDashboard() {
 
     // Start interval for continuous updates (2s for smoother tracking)
     intervalRef.current = setInterval(() => {
-      if (simulationMode || !('geolocation' in navigator)) {
+      if (simulationModeRef.current || !('geolocation' in navigator)) {
         // Simulation mode - move along route
         if (routeCoords.length < 2) return
 
@@ -218,6 +224,7 @@ export default function DriverDashboard() {
           },
           () => {
             setSimulationMode(true)
+            simulationModeRef.current = true
           },
           { enableHighAccuracy: true, timeout: 5000 }
         )
@@ -377,13 +384,13 @@ export default function DriverDashboard() {
                 <div className="mt-3 flex gap-2 flex-wrap">
                   {currentSpeed !== null && (
                     <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 rounded-lg px-3 py-1.5 shadow-sm">
-                      <Gauge className="w-3.5 h-3.5 text-emerald-600" />
+                      <Gauge className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{currentSpeed} km/h</span>
                     </div>
                   )}
                   {currentHeading !== null && (
                     <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 rounded-lg px-3 py-1.5 shadow-sm">
-                      <Navigation className="w-3.5 h-3.5 text-emerald-600" style={{ transform: `rotate(${currentHeading}deg)` }} />
+                      <Navigation className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" style={{ transform: `rotate(${currentHeading}deg)` }} />
                       <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{currentHeading}°</span>
                     </div>
                   )}
@@ -462,10 +469,10 @@ export default function DriverDashboard() {
 
         {/* Today's Collection */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card className="rounded-2xl border-0 shadow-sm">
+          <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
             <CardContent className="p-4 text-center">
               <p className="text-sm text-muted-foreground">Today&apos;s Collection</p>
-              <p className="text-3xl font-bold text-emerald-600 mt-1">{formatLKR(data.todayCollection)}</p>
+              <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{formatLKR(data.todayCollection)}</p>
               <p className="text-xs text-muted-foreground mt-1">
                 {data.todayPayments.length} payment{data.todayPayments.length !== 1 ? 's' : ''} collected
               </p>
@@ -476,14 +483,14 @@ export default function DriverDashboard() {
         {/* Quick Stats */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <div className="grid grid-cols-2 gap-3">
-            <Card className="rounded-2xl border-0 shadow-sm">
+            <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
               <CardContent className="p-3 text-center">
                 <HandCoins className="w-5 h-5 text-amber-500 mx-auto mb-1" />
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{dailyCount}</p>
                 <p className="text-[10px] text-muted-foreground">Daily Payments</p>
               </CardContent>
             </Card>
-            <Card className="rounded-2xl border-0 shadow-sm">
+            <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
               <CardContent className="p-3 text-center">
                 <CreditCard className="w-5 h-5 text-purple-500 mx-auto mb-1" />
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{monthlyCount}</p>
@@ -495,7 +502,7 @@ export default function DriverDashboard() {
 
         {/* Today's Payments */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <Card className="rounded-2xl border-0 shadow-sm">
+          <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold">Today&apos;s Payments</CardTitle>
             </CardHeader>

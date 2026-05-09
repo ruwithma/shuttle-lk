@@ -166,6 +166,8 @@ export async function GET(request: Request) {
               select: {
                 id: true, name: true, plateNumber: true, routeName: true,
                 routeStart: true, routeEnd: true, routeStops: true,
+                routeCoordinates: true, routeStopCoordinates: true,
+                currentLat: true, currentLng: true,
                 driver: { select: { id: true, name: true, phone: true } },
               },
             },

@@ -442,7 +442,7 @@ export default function ShuttleFinder() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/50 rounded-xl flex items-center justify-center">
-                      <BusIcon className="w-6 h-6 text-emerald-600" />
+                      <BusIcon className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div>
                       <h3 className="font-bold text-gray-900 dark:text-gray-100">{selectedShuttle.name}</h3>
@@ -495,7 +495,7 @@ export default function ShuttleFinder() {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-3 gap-2">
                   <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-2.5 text-center">
-                    <Users className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
+                    <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mx-auto mb-1" />
                     <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{selectedShuttle.seatsAvailable}</p>
                     <p className="text-[10px] text-muted-foreground">Seats Left</p>
                   </div>
@@ -513,7 +513,7 @@ export default function ShuttleFinder() {
                     ) : (
                       <>
                         <WifiOff className="w-4 h-4 text-gray-400 mx-auto mb-1" />
-                        <p className="text-sm font-bold text-gray-500">Offline</p>
+                        <p className="text-sm font-bold text-gray-500 dark:text-gray-400">Offline</p>
                       </>
                     )}
                     <p className="text-[10px] text-muted-foreground">Status</p>

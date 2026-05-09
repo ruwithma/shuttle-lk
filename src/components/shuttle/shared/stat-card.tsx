@@ -27,7 +27,7 @@ export default function StatCard({
   className,
 }: StatCardProps) {
   return (
-    <Card className={cn('rounded-2xl border-0 shadow-sm', className)}>
+    <Card className={cn('rounded-2xl border-0 shadow-sm dark:bg-gray-900', className)}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1">

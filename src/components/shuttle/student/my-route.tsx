@@ -427,7 +427,7 @@ export default function MyRoute() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/50 rounded-xl flex items-center justify-center">
-                <BusIcon className="w-7 h-7 text-emerald-600" />
+                <BusIcon className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div className="flex-1">
                 <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg">{bus?.name || 'N/A'}</h3>
@@ -474,7 +474,7 @@ export default function MyRoute() {
                     <div className="w-3 h-3 bg-emerald-500 rounded-full" />
                     <div className="absolute w-3 h-3 bg-emerald-500 rounded-full animate-ping" />
                   </div>
-                  <Wifi className="w-4 h-4 text-emerald-600" />
+                  <Wifi className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Bus is live</p>
                     <p className="text-xs text-muted-foreground">

@@ -137,10 +137,10 @@ export default function ExpenseTracking() {
           const config = categoryConfig[cat]
           const Icon = config.icon
           return (
-            <Card key={cat} className="rounded-2xl border-0 shadow-sm">
+            <Card key={cat} className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
               <CardContent className="p-3 flex items-center gap-3">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${config.color.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('dark:bg-')).join(' ')}`}>
-                  <Icon className="w-4 h-4" />
+                  <Icon className={`w-4 h-4 ${config.color.split(' ').filter(c => c.startsWith('text-') || c.startsWith('dark:text-')).join(' ')}`} />
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">{cat.charAt(0) + cat.slice(1).toLowerCase()}</p>
@@ -192,12 +192,12 @@ export default function ExpenseTracking() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.03 }}
               >
-                <Card className="rounded-xl border-0 shadow-sm">
+                <Card className="rounded-xl border-0 shadow-sm dark:bg-gray-900">
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${config.color.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('dark:bg-')).join(' ')}`}>
-                          <config.icon className={`w-4 h-4 ${config.color.split(' ').find(c => c.startsWith('text-')) || ''}`} />
+                          <config.icon className={`w-4 h-4 ${config.color.split(' ').filter(c => c.startsWith('text-') || c.startsWith('dark:text-')).join(' ')}`} />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900 dark:text-gray-100">

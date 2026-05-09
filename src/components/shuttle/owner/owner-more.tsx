@@ -31,28 +31,28 @@ export default function OwnerMore() {
       icon: MapPin,
       label: 'Fleet Tracking',
       description: 'Track all buses in real-time',
-      color: 'bg-emerald-50 dark:bg-emerald-900/50 text-emerald-600',
+      color: 'bg-emerald-50 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400',
     },
     {
       id: 'expenses' as MoreView,
       icon: Receipt,
       label: 'Expenses',
       description: 'Track and manage expenses',
-      color: 'bg-red-50 dark:bg-red-900/50 text-red-600',
+      color: 'bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-400',
     },
     {
       id: 'notifications' as MoreView,
       icon: Bell,
       label: 'Notifications',
       description: unreadCount > 0 ? `${unreadCount} unread` : 'All caught up',
-      color: 'bg-amber-50 dark:bg-amber-900/50 text-amber-600',
+      color: 'bg-amber-50 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400',
     },
     {
       id: 'reports' as MoreView,
       icon: FileBarChart,
       label: 'Reports',
       description: 'View financial reports',
-      color: 'bg-purple-50 dark:bg-purple-900/50 text-purple-600',
+      color: 'bg-purple-50 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400',
     },
   ]
 
@@ -68,7 +68,7 @@ export default function OwnerMore() {
             transition={{ delay: index * 0.1 }}
           >
             <Card
-              className="rounded-2xl border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+              className="rounded-2xl border-0 shadow-sm dark:bg-gray-900 cursor-pointer hover:shadow-md transition-shadow"
               onClick={() => {
                   setView(item.id)
               }}
@@ -77,7 +77,7 @@ export default function OwnerMore() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('dark:bg-')).join(' ')}`}>
-                      <item.icon className={`w-5 h-5 ${item.color.split(' ').find(c => c.startsWith('text-')) || ''}`} />
+                      <item.icon className={`w-5 h-5 ${item.color.split(' ').filter(c => c.startsWith('text-') || c.startsWith('dark:text-')).join(' ')}`} />
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.label}</p>

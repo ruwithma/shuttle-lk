@@ -160,12 +160,12 @@ export default function StudentManagement() {
                 exit={{ opacity: 0, x: -100 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <Card className="rounded-2xl border-0 shadow-sm">
+                <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-amber-50 dark:bg-amber-900/50 rounded-full flex items-center justify-center">
-                          <Users className="w-5 h-5 text-amber-600" />
+                          <Users className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                         </div>
                         <div>
                           <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">

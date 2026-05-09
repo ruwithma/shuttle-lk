@@ -434,7 +434,7 @@ export default function RouteRecorder() {
       {/* Live Map While Recording */}
       {(isRecording || recordedCoords.length > 0) && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card className="rounded-2xl border-0 shadow-sm overflow-hidden">
+          <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900 overflow-hidden">
             <CardContent className="p-0">
               <div style={{ height: 300 }}>
                 <ShuttleMap
@@ -456,7 +456,7 @@ export default function RouteRecorder() {
       {/* Recorded Stops List */}
       {recordedStops.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <Card className="rounded-2xl border-0 shadow-sm">
+          <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold">Recorded Stops</CardTitle>
             </CardHeader>
@@ -493,7 +493,7 @@ export default function RouteRecorder() {
       {/* Save Route Section */}
       {!isRecording && recordedCoords.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card className="rounded-2xl border-0 shadow-sm">
+          <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100">Save Route</CardTitle>
             </CardHeader>
@@ -577,7 +577,7 @@ export default function RouteRecorder() {
 
       {/* Existing Routes */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-        <Card className="rounded-2xl border-0 shadow-sm">
+        <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold">Saved Routes</CardTitle>
           </CardHeader>
@@ -593,7 +593,7 @@ export default function RouteRecorder() {
                 {existingRoutes.map((route: any) => (
                   <div key={route.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800">
                     <div className="w-9 h-9 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg flex items-center justify-center">
-                      <Route className="w-4 h-4 text-emerald-600" />
+                      <Route className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">

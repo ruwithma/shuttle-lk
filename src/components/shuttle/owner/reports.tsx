@@ -264,7 +264,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
       return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 px-3 py-2 text-xs">
           <p className="font-semibold text-gray-700 dark:text-gray-300">{payload[0].name}</p>
-          <p className="text-emerald-600 font-medium">{formatLKR(payload[0].value)}</p>
+          <p className="text-emerald-600 dark:text-emerald-400 font-medium">{formatLKR(payload[0].value)}</p>
         </div>
       )
     }
@@ -321,7 +321,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
       >
-        <Card className="rounded-2xl border-0 shadow-sm">
+        <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
               <Button
@@ -355,7 +355,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="rounded-2xl border-0 shadow-sm">
+        <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
           <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Monthly Overview</CardTitle>
           </CardHeader>
@@ -421,7 +421,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
       >
-        <Card className="rounded-2xl border-0 shadow-sm">
+        <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
           <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Per-Bus Breakdown</CardTitle>
           </CardHeader>
@@ -508,7 +508,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <Card className="rounded-2xl border-0 shadow-sm">
+        <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
           <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Payment Method Breakdown</CardTitle>
           </CardHeader>
@@ -559,7 +559,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
       >
-        <Card className="rounded-2xl border-0 shadow-sm">
+        <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
           <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Expense Category Breakdown</CardTitle>
           </CardHeader>
@@ -607,7 +607,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <Card className="rounded-2xl border-0 shadow-sm">
+        <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
           <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">6-Month Trend</CardTitle>
           </CardHeader>

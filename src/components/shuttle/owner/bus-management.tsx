@@ -157,12 +157,12 @@ export default function BusManagement() {
                 exit={{ opacity: 0, x: -100 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <Card className="rounded-2xl border-0 shadow-sm overflow-hidden">
+                <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900 overflow-hidden">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/50 rounded-xl flex items-center justify-center">
-                          <BusIcon className="w-6 h-6 text-emerald-600" />
+                          <BusIcon className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div>
                           <h3 className="font-semibold text-gray-900 dark:text-gray-100">{bus.name}</h3>

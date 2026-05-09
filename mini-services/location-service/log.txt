@@ -223,3 +223,22 @@ $ bun --hot index.ts
 [connection] socket=BYfG0j0UXTJO5DgXAAAj
 [disconnect] socket=BYfG0j0UXTJO5DgXAAAj (reason: ping timeout)
 [disconnect] socket=FNUY5g5y_232eY7bAAAh (reason: ping timeout)
+[connection] socket=9Z0pANm6Mxsly9UzAAAl
+[connection] socket=bvyyRWM-vV4Plpa9AAAn
+[disconnect] socket=9Z0pANm6Mxsly9UzAAAl (reason: transport close)
+[subscribe-owner] socket=bvyyRWM-vV4Plpa9AAAn joined owner:cmoymbaaa0094mgum46nsb8mt
+[unsubscribe-owner] socket=bvyyRWM-vV4Plpa9AAAn left owner:cmoymbaaa0094mgum46nsb8mt
+[subscribe-owner] socket=bvyyRWM-vV4Plpa9AAAn joined owner:cmoymbaaa0094mgum46nsb8mt
+[connection] socket=18ZsgkvX4zc884uzAAAp
+[unsubscribe-owner] socket=bvyyRWM-vV4Plpa9AAAn left owner:cmoymbaaa0094mgum46nsb8mt
+[driver-start] socket=bvyyRWM-vV4Plpa9AAAn bus=cmoymbaap009omgumiz8snlsr driver=Nimal Silva busName=Kadawatha Route owner=cmoymbaaa0094mgum46nsb8mt
+[driver-location] bus=cmoymbaap009omgumiz8snlsr lat=6.9354 lng=79.84915000000001 speed=44 heading=58
+[subscribe-bus] socket=bvyyRWM-vV4Plpa9AAAn joined bus:cmoymbaap009omgumiz8snlsr
+[unsubscribe-bus] socket=bvyyRWM-vV4Plpa9AAAn left bus:cmoymbaap009omgumiz8snlsr
+[subscribe-bus] socket=bvyyRWM-vV4Plpa9AAAn joined bus:cmoymbaap009omgumiz8snlsr
+[disconnect] socket=18ZsgkvX4zc884uzAAAp (reason: ping timeout)
+[connection] socket=JOGmTFA6lbCyirTsAAAr
+[disconnect] socket=JOGmTFA6lbCyirTsAAAr (reason: transport close)
+[connection] socket=iutATRvYs8cVZyeyAAAt
+[disconnect] socket=iutATRvYs8cVZyeyAAAt (reason: transport close)
+[disconnect] socket=bvyyRWM-vV4Plpa9AAAn was driver of bus=cmoymbaap009omgumiz8snlsr, removed from live map (reason: ping timeout)

@@ -138,11 +138,11 @@ export default function OwnerDashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <Card className="rounded-2xl border-0 shadow-sm">
+        <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Collection Rate</span>
-              <span className="text-sm font-bold text-emerald-600">{stats.collectionRate}%</span>
+              <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{stats.collectionRate}%</span>
             </div>
             <Progress value={stats.collectionRate} className="h-2" />
           </CardContent>
@@ -156,7 +156,7 @@ export default function OwnerDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="rounded-2xl border-0 shadow-sm">
+          <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100">Income vs Expenses</CardTitle>
             </CardHeader>
@@ -188,7 +188,7 @@ export default function OwnerDashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
       >
-        <Card className="rounded-2xl border-0 shadow-sm">
+        <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100">Fleet Overview</CardTitle>
@@ -290,7 +290,7 @@ export default function OwnerDashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <Card className="rounded-2xl border-0 shadow-sm">
+        <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent Payments</CardTitle>
           </CardHeader>

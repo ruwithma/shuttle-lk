@@ -62,7 +62,7 @@ export default function StudentPaymentHistory() {
       {/* Monthly Summary */}
       <Card className="rounded-2xl border-0 shadow-sm bg-emerald-50 dark:bg-emerald-900/30">
         <CardContent className="p-4 text-center">
-          <p className="text-sm text-emerald-600">
+          <p className="text-sm text-emerald-600 dark:text-emerald-400">
             {filterMonth ? `Total for ${format(new Date(filterMonth + '-01'), 'MMM yyyy')}` : 'Total Payments'}
           </p>
           <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{formatLKR(monthTotal)}</p>
@@ -82,7 +82,7 @@ export default function StudentPaymentHistory() {
         {filterMonth && (
           <button
             onClick={() => setFilterMonth('')}
-            className="text-xs text-emerald-600 font-medium"
+            className="text-xs text-emerald-600 dark:text-emerald-400 font-medium"
           >
             Clear
           </button>
@@ -99,7 +99,7 @@ export default function StudentPaymentHistory() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.03 }}
             >
-              <Card className="rounded-xl border-0 shadow-sm">
+              <Card className="rounded-xl border-0 shadow-sm dark:bg-gray-900">
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">

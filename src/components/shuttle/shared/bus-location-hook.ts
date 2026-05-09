@@ -134,6 +134,16 @@ export function useBusLocation(busId: string | null | undefined): UseBusLocation
     }
   }, [getSocket, connected, activeBusId])
 
+  // Keep track of current interpolated position via ref to avoid stale closures
+  const interpPosRef = useRef<{ lat: number; lng: number } | null>(null)
+  useEffect(() => {
+    interpPosRef.current = interpolatedPosition
+  }, [interpolatedPosition])
+  const locationRef = useRef<BusLocation | null>(null)
+  useEffect(() => {
+    locationRef.current = location
+  }, [location])
+
   // Listen for location updates
   useEffect(() => {
     const socket = getSocket()
@@ -157,7 +167,8 @@ export function useBusLocation(busId: string | null | undefined): UseBusLocation
         }
 
         // Set up interpolation from current displayed position to new position
-        const currentInterp = interpolatedPosition || location
+        // Use refs to avoid stale closure issues
+        const currentInterp = interpPosRef.current || locationRef.current
         if (currentInterp) {
           const dist = Math.sqrt(
             Math.pow(newLoc.lat - currentInterp.lat, 2) +
@@ -192,7 +203,7 @@ export function useBusLocation(busId: string | null | undefined): UseBusLocation
     return () => {
       socket.off('bus-location', handleLocationUpdate)
     }
-  }, [getSocket, activeBusId, location, interpolatedPosition])
+  }, [getSocket, activeBusId])
 
   return { location, isLive, trail, connected, interpolatedPosition }
 }
@@ -214,6 +225,12 @@ export function useFleetLocations(ownerId: string | null | undefined) {
   }>>([])
   const [loading, setLoading] = useState(true)
   const subscribedRef = useRef<string | null>(null)
+  const ownerIdRef = useRef(ownerId)
+
+  // Keep ownerId ref in sync
+  useEffect(() => {
+    ownerIdRef.current = ownerId
+  }, [ownerId])
 
   // Fetch initial locations
   useEffect(() => {
@@ -225,7 +242,11 @@ export function useFleetLocations(ownerId: string | null | undefined) {
       .then((data) => {
         if (cancelled || !data) return
         if (data.locations && Array.isArray(data.locations)) {
-          setLocations(data.locations)
+          // Filter out buses with invalid coordinates (0,0 means no location)
+          const validLocations = data.locations.filter(
+            (loc: { lat: number; lng: number }) => loc.lat !== 0 && loc.lng !== 0
+          )
+          setLocations(validLocations)
         }
       })
       .catch(() => {})
@@ -237,20 +258,20 @@ export function useFleetLocations(ownerId: string | null | undefined) {
   // Socket subscription
   useEffect(() => {
     const socket = getSocket()
-    if (!socket || !connected || !ownerId) return
+    if (!socket || !ownerId) return
 
-    const onConnect = () => {
-      socket.emit('subscribe-owner', { ownerId })
-      subscribedRef.current = ownerId
+    const subscribe = () => {
+      if (socket.connected && ownerIdRef.current) {
+        socket.emit('subscribe-owner', { ownerId: ownerIdRef.current })
+        subscribedRef.current = ownerIdRef.current
+      }
     }
 
-    if (socket.connected) {
-      onConnect()
-    }
+    // Subscribe immediately if connected
+    subscribe()
+    socket.on('connect', subscribe)
 
-    socket.on('connect', onConnect)
-
-    socket.on('bus-location', (data: {
+    const handleBusLocation = (data: {
       busId: string
       lat: number
       lng: number
@@ -258,47 +279,97 @@ export function useFleetLocations(ownerId: string | null | undefined) {
       heading?: number
       timestamp?: string
     }) => {
-      setLocations((prev) =>
-        prev.map((loc) =>
-          loc.busId === data.busId
-            ? {
-                ...loc,
-                lat: data.lat,
-                lng: data.lng,
-                speed: data.speed ?? null,
-                heading: data.heading ?? null,
-                timestamp: data.timestamp ?? new Date().toISOString(),
-                isLive: true,
-              }
-            : loc
-        )
-      )
-    })
+      setLocations((prev) => {
+        const existingIdx = prev.findIndex((loc) => loc.busId === data.busId)
+        if (existingIdx >= 0) {
+          // Update existing bus location
+          return prev.map((loc, idx) =>
+            idx === existingIdx
+              ? {
+                  ...loc,
+                  lat: data.lat,
+                  lng: data.lng,
+                  speed: data.speed ?? null,
+                  heading: data.heading ?? null,
+                  timestamp: data.timestamp ?? new Date().toISOString(),
+                  isLive: true,
+                }
+              : loc
+          )
+        } else {
+          // Bus not in our list yet - add it (driver just went live)
+          return [
+            ...prev,
+            {
+              busId: data.busId,
+              busName: '',
+              plateNumber: '',
+              lat: data.lat,
+              lng: data.lng,
+              speed: data.speed ?? null,
+              heading: data.heading ?? null,
+              timestamp: data.timestamp ?? new Date().toISOString(),
+              routeName: '',
+              isLive: true,
+            },
+          ]
+        }
+      })
+    }
 
-    socket.on('driver-started', (data: { busId: string }) => {
-      setLocations((prev) =>
-        prev.map((loc) =>
-          loc.busId === data.busId ? { ...loc, isLive: true } : loc
-        )
-      )
-    })
+    const handleDriverStarted = (data: { busId: string; busName?: string; driverName?: string }) => {
+      setLocations((prev) => {
+        const existingIdx = prev.findIndex((loc) => loc.busId === data.busId)
+        if (existingIdx >= 0) {
+          return prev.map((loc, idx) =>
+            idx === existingIdx
+              ? { ...loc, isLive: true, busName: loc.busName || data.busName || '' }
+              : loc
+          )
+        } else {
+          // New bus not in our initial list - add it
+          return [
+            ...prev,
+            {
+              busId: data.busId,
+              busName: data.busName || '',
+              plateNumber: '',
+              lat: 0,
+              lng: 0,
+              speed: null,
+              heading: null,
+              timestamp: new Date().toISOString(),
+              routeName: '',
+              isLive: true,
+            },
+          ]
+        }
+      })
+    }
 
-    socket.on('driver-stopped', (data: { busId: string }) => {
+    const handleDriverStopped = (data: { busId: string }) => {
       setLocations((prev) =>
         prev.map((loc) =>
           loc.busId === data.busId ? { ...loc, isLive: false } : loc
         )
       )
-    })
+    }
+
+    socket.on('bus-location', handleBusLocation)
+    socket.on('driver-started', handleDriverStarted)
+    socket.on('driver-stopped', handleDriverStopped)
 
     return () => {
-      socket.off('connect', onConnect)
+      socket.off('connect', subscribe)
+      socket.off('bus-location', handleBusLocation)
+      socket.off('driver-started', handleDriverStarted)
+      socket.off('driver-stopped', handleDriverStopped)
       if (subscribedRef.current) {
         socket.emit('unsubscribe-owner', { ownerId: subscribedRef.current })
         subscribedRef.current = null
       }
     }
-  }, [getSocket, connected, ownerId])
+  }, [getSocket, ownerId])
 
   return { locations, loading }
 }

@@ -175,12 +175,12 @@ export default function StudentDashboard() {
       {/* Find Shuttles CTA - Prominent card for students */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <Card
-          className="rounded-2xl border-2 border-dashed border-emerald-300 bg-gradient-to-br from-emerald-50 to-teal-50 cursor-pointer hover:shadow-md transition-all hover:border-emerald-400"
+          className="rounded-2xl border-2 border-dashed border-emerald-300 dark:border-emerald-700 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20 cursor-pointer hover:shadow-md transition-all hover:border-emerald-400 dark:hover:border-emerald-600"
           onClick={() => setActiveTab('find')}
         >
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200">
+              <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200 dark:shadow-emerald-900/50">
                 <Search className="w-7 h-7 text-white" />
               </div>
               <div className="flex-1">
@@ -189,7 +189,7 @@ export default function StudentDashboard() {
               </div>
               <div className="flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-amber-500" />
-                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">New</span>
+                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">New</span>
               </div>
             </div>
           </CardContent>
@@ -215,14 +215,14 @@ export default function StudentDashboard() {
 
       {/* Subscription Info */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <Card className="rounded-2xl border-0 shadow-sm">
+        <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold">Current Subscription</CardTitle>
           </CardHeader>
           <CardContent className="pb-4">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/50 rounded-xl flex items-center justify-center">
-                <BusIcon className="w-5 h-5 text-emerald-600" />
+                <BusIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
                 <p className="text-sm font-semibold">{data.bus.name}</p>
@@ -284,14 +284,14 @@ export default function StudentDashboard() {
       {/* Quick Stats */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <div className="grid grid-cols-2 gap-3">
-          <Card className="rounded-2xl border-0 shadow-sm">
+          <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
             <CardContent className="p-3 text-center">
               <CreditCard className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
               <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatLKR(totalPaidThisMonth)}</p>
               <p className="text-[10px] text-muted-foreground">Paid This Month</p>
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border-0 shadow-sm">
+          <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
             <CardContent className="p-3 text-center">
               <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
               <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{data.paymentHistory.length}</p>

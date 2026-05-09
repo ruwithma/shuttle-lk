@@ -114,7 +114,7 @@ export default function CollectPayment() {
   if (loading) {
     return (
       <div className="p-4 space-y-4 flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+        <Loader2 className="w-6 h-6 animate-spin text-emerald-600 dark:text-emerald-400" />
       </div>
     )
   }
@@ -127,14 +127,14 @@ export default function CollectPayment() {
       {driverBus && (
         <Card className="rounded-2xl border-0 shadow-sm bg-emerald-50 dark:bg-emerald-900/30">
           <CardContent className="p-3">
-            <p className="text-xs text-emerald-600 font-medium">Assigned Bus</p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Assigned Bus</p>
             <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{driverBus.name} - {driverBus.plateNumber}</p>
           </CardContent>
         </Card>
       )}
 
       {/* Student Selection */}
-      <Card className="rounded-2xl border-0 shadow-sm">
+      <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
         <CardContent className="p-4 space-y-4">
           <div>
             <Label className="text-xs">Select Student</Label>
@@ -239,7 +239,7 @@ export default function CollectPayment() {
 
       {/* Recent Collections */}
       {recentCollections.length > 0 && (
-        <Card className="rounded-2xl border-0 shadow-sm">
+        <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
           <CardContent className="p-4">
             <p className="text-sm font-semibold mb-3 dark:text-gray-100">Recent Collections</p>
             <div className="space-y-2 max-h-64 overflow-y-auto">

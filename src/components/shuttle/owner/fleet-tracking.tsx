@@ -52,23 +52,25 @@ export default function FleetTracking() {
     return paths
   }, [buses])
 
-  // Fleet buses for map display
+  // Fleet buses for map display - filter out buses with no valid coordinates
   const fleetBuses = useMemo(() => {
     if (!locations || locations.length === 0) return []
-    return locations.map((loc, index) => ({
-      busId: loc.busId,
-      busName: loc.busName,
-      plateNumber: loc.plateNumber,
-      lat: loc.lat,
-      lng: loc.lng,
-      heading: loc.heading ?? undefined,
-      speed: loc.speed ?? undefined,
-      isLive: loc.isLive,
-      lastUpdate: loc.timestamp
-        ? formatDistanceToNow(new Date(loc.timestamp), { addSuffix: true })
-        : undefined,
-      color: BUS_COLORS[index % BUS_COLORS.length],
-    }))
+    return locations
+      .filter((loc) => loc.lat !== 0 && loc.lng !== 0) // Only show buses with valid coordinates
+      .map((loc, index) => ({
+        busId: loc.busId,
+        busName: loc.busName,
+        plateNumber: loc.plateNumber,
+        lat: loc.lat,
+        lng: loc.lng,
+        heading: loc.heading ?? undefined,
+        speed: loc.speed ?? undefined,
+        isLive: loc.isLive,
+        lastUpdate: loc.timestamp
+          ? formatDistanceToNow(new Date(loc.timestamp), { addSuffix: true })
+          : undefined,
+        color: BUS_COLORS[index % BUS_COLORS.length],
+      }))
   }, [locations])
 
   // Selected bus route path
@@ -121,12 +123,13 @@ export default function FleetTracking() {
     }
   }, [selectedBusId, locations, buses])
 
-  // Map center and zoom
+  // Map center and zoom - focus on Sri Lanka Colombo area by default
   const mapCenter = useMemo((): [number, number] => {
     if (selectedBusId && selectedBusLocation) {
       return [selectedBusLocation.lat, selectedBusLocation.lng]
     }
-    return [7.0, 79.9]
+    // Default: University of Kelaniya area where most routes converge
+    return [6.9750, 79.9030]
   }, [selectedBusId, selectedBusLocation])
 
   const mapZoom = selectedBusId ? 14 : 10

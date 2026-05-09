@@ -159,28 +159,28 @@ export default function PaymentTracking() {
       <div className="grid grid-cols-2 gap-3">
         <Card className="rounded-2xl border-0 shadow-sm bg-emerald-50 dark:bg-emerald-900/30">
           <CardContent className="p-3">
-            <p className="text-[10px] font-medium text-emerald-600">Today</p>
+            <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">Today</p>
             <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{formatLKR(todayTotal)}</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border-0 shadow-sm bg-blue-50 dark:bg-blue-900/30">
           <CardContent className="p-3">
-            <p className="text-[10px] font-medium text-blue-600">This Month</p>
+            <p className="text-[10px] font-medium text-blue-600 dark:text-blue-400">This Month</p>
             <p className="text-lg font-bold text-blue-700 dark:text-blue-300">{formatLKR(monthTotal)}</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Card className="rounded-2xl border-0 shadow-sm">
+        <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
           <CardContent className="p-3">
-            <p className="text-[10px] font-medium text-amber-600">Daily Total</p>
+            <p className="text-[10px] font-medium text-amber-600 dark:text-amber-400">Daily Total</p>
             <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatLKR(dailyTotal)}</p>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border-0 shadow-sm">
+        <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900">
           <CardContent className="p-3">
-            <p className="text-[10px] font-medium text-purple-600">Monthly Total</p>
+            <p className="text-[10px] font-medium text-purple-600 dark:text-purple-400">Monthly Total</p>
             <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatLKR(monthlyTotal)}</p>
           </CardContent>
         </Card>
@@ -232,12 +232,12 @@ export default function PaymentTracking() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.03 }}
             >
-              <Card className="rounded-xl border-0 shadow-sm">
+              <Card className="rounded-xl border-0 shadow-sm dark:bg-gray-900">
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-emerald-50 dark:bg-emerald-900/50 flex items-center justify-center">
-                        <CreditCard className="w-4 h-4 text-emerald-600" />
+                        <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
