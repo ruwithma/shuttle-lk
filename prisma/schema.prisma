@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  email     String?
+  password  String   @default("123456")
+  role      String   // OWNER, DRIVER, STUDENT
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownedBuses       Bus[]         @relation("OwnedBuses")
+  drivenBus        Bus?          @relation("DriverBus")
+  subscriptions    Subscription[]
+  paymentsMade     Payment[]     @relation("StudentPayments")
+  paymentsCollected Payment[]    @relation("CollectedPayments")
+  expenses         Expense[]     @relation("ExpenseRecorder")
+  notifications    Notification[]
+}
+
+model Bus {
+  id          String   @id @default(cuid())
+  plateNumber String
+  name        String
+  capacity    Int      @default(50)
+  routeName   String
+  routeStart  String
+  routeEnd    String
+  routeStops  String   @default("")
+  ownerId     String
+  driverId    String?  @unique
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner        User           @relation("OwnedBuses", fields: [ownerId], references: [id])
+  driver       User?          @relation("DriverBus", fields: [driverId], references: [id])
+  subscriptions Subscription[]
+  payments     Payment[]
+  expenses     Expense[]
+}
+
+model Subscription {
+  id            String    @id @default(cuid())
+  studentId     String
+  busId         String
+  paymentType   String    // DAILY, MONTHLY
+  monthlyAmount Float?
+  dailyAmount   Float?
+  startDate     DateTime
+  endDate       DateTime?
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  student User  @relation(fields: [studentId], references: [id])
+  bus     Bus   @relation(fields: [busId], references: [id])
+  payments Payment[]
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  studentId       String
+  busId           String
+  subscriptionId  String?
+  amount          Float
+  paymentMethod   String   // CASH, BANK_TRANSFER
+  paymentType     String   // DAILY, MONTHLY
+  collectedById   String
+  date            DateTime
+  note            String?
+  month           String?  // e.g. "2025-01" for monthly payments
+  createdAt       DateTime @default(now())
+
+  student      User         @relation("StudentPayments", fields: [studentId], references: [id])
+  bus          Bus          @relation(fields: [busId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  collector    User         @relation("CollectedPayments", fields: [collectedById], references: [id])
+}
+
+model Expense {
+  id           String   @id @default(cuid())
+  busId        String
+  category     String   // FUEL, MAINTENANCE, SALARY, OTHER
+  amount       Float
+  description  String?
+  date         DateTime
+  recordedById String
+  createdAt    DateTime @default(now())
+
+  bus      Bus  @relation(fields: [busId], references: [id])
+  recorder User @relation("ExpenseRecorder", fields: [recordedById], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   // PAYMENT_REMINDER, PAYMENT_RECEIVED, GENERAL
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
