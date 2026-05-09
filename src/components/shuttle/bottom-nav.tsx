@@ -9,6 +9,7 @@ import {
   HandCoins,
   History,
   Route,
+  Search,
 } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import type { UserRole } from '@/lib/types'
@@ -22,7 +23,8 @@ interface TabConfig {
 }
 
 const TABS: TabConfig[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['OWNER', 'DRIVER', 'STUDENT'] },
+  { id: 'dashboard', label: 'Home', icon: LayoutDashboard, roles: ['OWNER', 'DRIVER', 'STUDENT'] },
+  { id: 'find', label: 'Find', icon: Search, roles: ['OWNER', 'DRIVER', 'STUDENT'] },
   { id: 'buses', label: 'Buses', icon: Bus, roles: ['OWNER'] },
   { id: 'students', label: 'Students', icon: Users, roles: ['OWNER'] },
   { id: 'payments', label: 'Payments', icon: CreditCard, roles: ['OWNER', 'STUDENT'] },
@@ -41,7 +43,7 @@ export default function BottomNav() {
   const unreadCount = notifications.filter((n) => !n.read).length
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 z-50 safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 z-50 safe-area-bottom">
       <div className="max-w-lg mx-auto flex items-center justify-around">
         {visibleTabs.map((tab) => {
           const isActive = activeTab === tab.id
@@ -52,9 +54,9 @@ export default function BottomNav() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="flex flex-col items-center justify-center py-2 px-3 min-w-[60px] relative"
+              className="flex flex-col items-center justify-center py-1.5 px-2 min-w-[52px] relative"
             >
-              <div className="relative">
+              <div className="relative p-1">
                 {isActive && (
                   <motion.div
                     layoutId="activeTab"
@@ -63,8 +65,8 @@ export default function BottomNav() {
                   />
                 )}
                 <Icon
-                  className={`w-5 h-5 relative z-10 ${
-                    isActive ? 'text-emerald-600' : 'text-gray-400 dark:text-gray-500'
+                  className={`w-5 h-5 relative z-10 transition-colors ${
+                    isActive ? 'text-emerald-600' : 'text-gray-400'
                   }`}
                 />
                 {showBadge && (
@@ -74,8 +76,8 @@ export default function BottomNav() {
                 )}
               </div>
               <span
-                className={`text-[10px] mt-1 font-medium ${
-                  isActive ? 'text-emerald-600' : 'text-gray-400 dark:text-gray-500'
+                className={`text-[10px] mt-0.5 font-medium transition-colors ${
+                  isActive ? 'text-emerald-600' : 'text-gray-400'
                 }`}
               >
                 {tab.label}

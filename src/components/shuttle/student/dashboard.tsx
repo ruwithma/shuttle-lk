@@ -1,16 +1,15 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle2, AlertCircle, Clock, CreditCard, Bus as BusIcon, MapPin, Radio } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Clock, CreditCard, Bus as BusIcon, MapPin, Radio, Navigation } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { fetchDashboardData, isCacheFresh } from '@/lib/data-fetcher'
+import { useBusLocation } from '@/components/shuttle/shared/bus-location-hook'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
-import RefreshIndicator from '@/components/shuttle/shared/refresh-indicator'
-import type { StudentDashboard as StudentDashboardType } from '@/lib/types'
 
 const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
@@ -21,8 +20,7 @@ const statusConfig = {
 }
 
 export default function StudentDashboard() {
-  const { currentUser, studentDashboard, setStudentDashboard, setActiveTab, busLocations } = useAppStore()
-  // Skip loading skeleton if we already have cached data that is fresh
+  const { currentUser, studentDashboard, setStudentDashboard, setActiveTab } = useAppStore()
   const [loading, setLoading] = useState(!studentDashboard || !isCacheFresh('STUDENT'))
   const [refreshing, setRefreshing] = useState(false)
 
@@ -50,16 +48,6 @@ export default function StudentDashboard() {
     }
   }, [currentUser, setStudentDashboard, studentDashboard])
 
-  if (loading) {
-    return (
-      <div className="p-4 space-y-4">
-        <div className="h-8 bg-gray-100 rounded-lg animate-pulse w-48" />
-        <div className="h-32 bg-gray-100 rounded-2xl animate-pulse" />
-        <div className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
-      </div>
-    )
-  }
-
   const data = studentDashboard || {
     paymentStatus: 'UNPAID' as const,
     nextDueDate: undefined,
@@ -67,6 +55,9 @@ export default function StudentDashboard() {
     subscription: { id: '', studentId: '', busId: '', paymentType: 'MONTHLY' as const, active: false, startDate: '' },
     bus: { id: '', plateNumber: '', name: 'N/A', capacity: 0, routeName: '', routeStart: '', routeEnd: '', routeStops: '', ownerId: '', active: false },
   }
+
+  // Get live bus location for this student's bus
+  const { location, isLive } = useBusLocation(data.bus?.id || null)
 
   const status = statusConfig[data.paymentStatus]
   const StatusIcon = status.icon
@@ -86,10 +77,18 @@ export default function StudentDashboard() {
     return 'Good evening'
   }
 
-  return (
-    <div className="relative">
-      <RefreshIndicator loading={refreshing} />
+  if (loading) {
+    return (
       <div className="p-4 space-y-4">
+        <div className="h-8 bg-gray-100 rounded-lg animate-pulse w-48" />
+        <div className="h-32 bg-gray-100 rounded-2xl animate-pulse" />
+        <div className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-4 space-y-4">
       {/* Welcome */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <h2 className="text-xl font-bold text-gray-900">
@@ -113,6 +112,44 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Live Bus Status - Uber-style card when bus is live */}
+      {isLive && location && (
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 }}>
+          <Card className="rounded-2xl border-0 shadow-md bg-gradient-to-r from-emerald-500 to-teal-500 text-white overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Navigation className="w-4 h-4" />
+                    <span className="text-sm font-semibold text-emerald-100">Your bus is on the way</span>
+                  </div>
+                  <p className="text-sm text-emerald-100">
+                    {location.speed ? `${Math.round(location.speed)} km/h` : 'Moving'}
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setActiveTab('route')}
+                  size="sm"
+                  className="bg-white/20 hover:bg-white/30 text-white border-0 rounded-xl text-xs font-semibold"
+                >
+                  <MapPin className="w-3.5 h-3.5 mr-1" />
+                  Track Live
+                </Button>
+              </div>
+              {/* Animated progress bar */}
+              <div className="mt-3 bg-white/20 rounded-full h-1.5">
+                <motion.div
+                  className="bg-white rounded-full h-1.5"
+                  initial={{ width: '0%' }}
+                  animate={{ width: '50%' }}
+                  transition={{ duration: 1.5, ease: 'easeOut' }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Subscription Info */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
@@ -153,41 +190,34 @@ export default function StudentDashboard() {
       </motion.div>
 
       {/* Bus Status & Track Bus */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-        <Card className="rounded-2xl border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-teal-600" />
+      {!isLive && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+          <Card className="rounded-2xl border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                    <MapPin className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-500">Bus is offline</p>
+                    <p className="text-xs text-muted-foreground">Check back later for live tracking</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Bus Status</p>
-                  {data.bus.id && busLocations[data.bus.id]?.isLive ? (
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                      </span>
-                      <p className="text-xs text-emerald-600 font-medium">Bus is on the way</p>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground mt-0.5">Bus is offline</p>
-                  )}
-                </div>
+                <Button
+                  onClick={() => setActiveTab('route')}
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl text-xs"
+                >
+                  <Radio className="w-3.5 h-3.5 mr-1" />
+                  View Route
+                </Button>
               </div>
-              <Button
-                onClick={() => setActiveTab('route')}
-                size="sm"
-                className="rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs"
-              >
-                <Radio className="w-3.5 h-3.5 mr-1" />
-                Track Bus
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Quick Stats */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
@@ -208,7 +238,6 @@ export default function StudentDashboard() {
           </Card>
         </div>
       </motion.div>
-    </div>
     </div>
   )
 }

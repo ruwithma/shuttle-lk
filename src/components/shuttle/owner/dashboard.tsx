@@ -269,7 +269,7 @@ export default function OwnerDashboard() {
           </CardContent>
         </Card>
       </motion.div>
-    </div>
+      </div>
     </div>
   )
 }

@@ -28,3 +28,8 @@ $ bun --hot index.ts
 [disconnect] socket=OpBHSS7qdG22ofuNAAAI (reason: client namespace disconnect)
 $ bun --hot index.ts
 🚌 Location tracking WebSocket server running on port 3003
+[connection] socket=eWfLLliMSif2COu8AAAB
+[disconnect] socket=eWfLLliMSif2COu8AAAB (reason: client namespace disconnect)
+[connection] socket=apFTlrq9JLH9OPAqAAAD
+[disconnect] socket=apFTlrq9JLH9OPAqAAAD (reason: client namespace disconnect)
+[connection] socket=XGg2YZfSkQedNlb0AAAF

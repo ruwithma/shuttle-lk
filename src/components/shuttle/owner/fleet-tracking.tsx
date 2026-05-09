@@ -1,136 +1,37 @@
 'use client'
 
-import { useEffect, useState, useRef, useMemo, useCallback } from 'react'
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Bus as BusIcon, MapPin, Wifi, WifiOff, ChevronRight } from 'lucide-react'
-import { io, Socket } from 'socket.io-client'
+import { Bus as BusIcon, MapPin } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import BusMap from '@/components/shuttle/shared/bus-map'
+import { useFleetLocations } from '@/components/shuttle/shared/bus-location-hook'
 import { formatDistanceToNow } from 'date-fns'
-
-interface BusLocationData {
-  busId: string
-  busName: string
-  plateNumber: string
-  lat: number
-  lng: number
-  speed: number | null
-  heading: number | null
-  timestamp: string | null
-  routeName: string
-  isLive: boolean
-}
 
 const BUS_COLORS = ['#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#3b82f6', '#ec4899']
 
 export default function FleetTracking() {
   const { currentUser, buses, setBuses } = useAppStore()
-  const [locations, setLocations] = useState<BusLocationData[]>([])
-  const [loading, setLoading] = useState(true)
-  const socketRef = useRef<Socket | null>(null)
+  const { locations, loading } = useFleetLocations(currentUser?.id ?? null)
 
   // Load buses if not already loaded
-  useEffect(() => {
+  // Note: This is handled by the store cache, so we only fetch if empty
+  useMemo(() => {
     if (!currentUser || buses.length > 0) return
     fetch(`/api/buses?ownerId=${currentUser.id}`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
-        if (Array.isArray(data)) setBuses(data)
-      })
-      .catch(() => {})
-  }, [currentUser, buses.length, setBuses])
-
-  // Fetch initial locations
-  useEffect(() => {
-    if (!currentUser) return
-    let cancelled = false
-
-    fetch(`/api/locations?ownerId=${currentUser.id}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (cancelled || !data) return
-        if (data.locations && Array.isArray(data.locations)) {
-          setLocations(data.locations)
+        if (Array.isArray(data)) {
+          useAppStore.getState().setBuses(data)
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
+  }, [currentUser, buses.length])
 
-    return () => {
-      cancelled = true
-    }
-  }, [currentUser])
-
-  // Socket.IO subscription for live updates
-  useEffect(() => {
-    if (!currentUser) return
-
-    const socket = io('/?XTransformPort=3003', {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    })
-    socketRef.current = socket
-
-    socket.on('connect', () => {
-      socket.emit('subscribe-owner', { ownerId: currentUser.id })
-    })
-
-    socket.on('bus-location', (data: {
-      busId: string
-      lat: number
-      lng: number
-      speed?: number
-      heading?: number
-      timestamp?: string
-    }) => {
-      setLocations((prev) =>
-        prev.map((loc) =>
-          loc.busId === data.busId
-            ? {
-                ...loc,
-                lat: data.lat,
-                lng: data.lng,
-                speed: data.speed ?? null,
-                heading: data.heading ?? null,
-                timestamp: data.timestamp ?? new Date().toISOString(),
-                isLive: true,
-              }
-            : loc
-        )
-      )
-    })
-
-    socket.on('driver-started', (data: { busId: string; driverName: string; busName: string }) => {
-      setLocations((prev) =>
-        prev.map((loc) =>
-          loc.busId === data.busId ? { ...loc, isLive: true } : loc
-        )
-      )
-    })
-
-    socket.on('driver-stopped', (data: { busId: string }) => {
-      setLocations((prev) =>
-        prev.map((loc) =>
-          loc.busId === data.busId ? { ...loc, isLive: false } : loc
-        )
-      )
-    })
-
-    return () => {
-      socket.emit('unsubscribe-owner', { ownerId: currentUser.id })
-      socket.disconnect()
-    }
-  }, [currentUser])
-
-  // Build fleet buses for map
   const fleetBuses = useMemo(() => {
     if (!locations || locations.length === 0) return []
-
     return locations.map((loc, index) => ({
       busId: loc.busId,
       busName: loc.busName,
@@ -196,10 +97,10 @@ export default function FleetTracking() {
                 {locations.map((loc, index) => {
                   const busColor = BUS_COLORS[index % BUS_COLORS.length]
                   return (
-                    <div key={loc.busId} className="flex items-center gap-3 p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <div key={loc.busId} className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
                       <div
                         className="w-10 h-10 rounded-xl flex items-center justify-center"
-                        style={{ backgroundColor: `${busColor}20` }}
+                        style={{ backgroundColor: `${busColor}15` }}
                       >
                         <BusIcon className="w-5 h-5" style={{ color: busColor }} />
                       </div>
@@ -208,14 +109,14 @@ export default function FleetTracking() {
                           <p className="text-sm font-semibold text-gray-900 truncate">{loc.busName}</p>
                           {loc.isLive ? (
                             <div className="flex items-center gap-1">
-                              <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                              </span>
                               <span className="text-[10px] text-emerald-600 font-medium">Live</span>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-1">
-                              <div className="w-2 h-2 bg-gray-400 rounded-full" />
-                              <span className="text-[10px] text-gray-400 font-medium">Offline</span>
-                            </div>
+                            <span className="text-[10px] text-gray-400 font-medium">Offline</span>
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground">{loc.plateNumber} · {loc.routeName}</p>
@@ -225,7 +126,7 @@ export default function FleetTracking() {
                           </p>
                         )}
                       </div>
-                      <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                      <MapPin className="w-4 h-4 text-gray-300 flex-shrink-0" />
                     </div>
                   )
                 })}

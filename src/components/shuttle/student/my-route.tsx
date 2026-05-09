@@ -2,13 +2,48 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Bus as BusIcon, Phone, User, Wifi, WifiOff } from 'lucide-react'
+import { Bus as BusIcon, Phone, User, Wifi, WifiOff, Clock, Navigation } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import BusMap from '@/components/shuttle/shared/bus-map'
 import { useBusLocation } from '@/components/shuttle/shared/bus-location-hook'
 import { formatDistanceToNow } from 'date-fns'
+
+// Calculate ETA between bus and student's stop
+function calculateETA(
+  busLat: number,
+  busLng: number,
+  stopLat: number,
+  stopLng: number,
+  speedKmh: number | null | undefined
+): string | null {
+  const R = 6371000
+  const dLat = (stopLat - busLat) * Math.PI / 180
+  const dLng = (stopLng - busLng) * Math.PI / 180
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(busLat * Math.PI / 180) * Math.cos(stopLat * Math.PI / 180) *
+    Math.sin(dLng / 2) ** 2
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  const distMeters = R * c
+
+  if (speedKmh && speedKmh > 5) {
+    const speedMs = speedKmh / 3.6
+    const etaSeconds = distMeters / speedMs
+    if (etaSeconds < 60) return '< 1 min'
+    if (etaSeconds < 3600) return `${Math.round(etaSeconds / 60)} min`
+    return `${Math.floor(etaSeconds / 3600)}h ${Math.round((etaSeconds % 3600) / 60)}m`
+  }
+
+  // If no speed, estimate based on average Sri Lanka bus speed (25 km/h)
+  const avgSpeedMs = 25 / 3.6
+  const etaSeconds = distMeters / avgSpeedMs
+  if (distMeters < 500) return '< 2 min'
+  if (etaSeconds < 60) return '< 1 min'
+  if (etaSeconds < 3600) return `~${Math.round(etaSeconds / 60)} min`
+  return `~${Math.floor(etaSeconds / 3600)}h ${Math.round((etaSeconds % 3600) / 60)}m`
+}
 
 export default function MyRoute() {
   const { currentUser, studentDashboard, setStudentDashboard, buses } = useAppStore()
@@ -37,8 +72,8 @@ export default function MyRoute() {
   const subscription = studentDashboard?.subscription
   const driver = bus?.driver
 
-  // Live bus location tracking
-  const { location, isLive, trail, connected } = useBusLocation(bus?.id ?? null)
+  // Live bus location tracking with interpolation
+  const { location, isLive, trail, connected, interpolatedPosition } = useBusLocation(bus?.id ?? null)
 
   // Parse route coordinates and stops
   const routePath = useMemo<[number, number][]>(() => {
@@ -47,9 +82,7 @@ export default function MyRoute() {
       if (Array.isArray(coords) && coords.length > 0) {
         return coords.map((c: [number, number]) => [c[0], c[1]] as [number, number])
       }
-    } catch {
-      // ignore parse errors
-    }
+    } catch {}
     return []
   }, [bus?.routeCoordinates])
 
@@ -62,9 +95,7 @@ export default function MyRoute() {
           return { name, lat: c[0], lng: c[1] }
         })
       }
-    } catch {
-      // ignore parse errors
-    }
+    } catch {}
     return []
   }, [bus?.routeStopCoordinates])
 
@@ -83,7 +114,34 @@ export default function MyRoute() {
     return trail.map((t) => ({ lat: t.lat, lng: t.lng }))
   }, [trail])
 
-  // Calculate time since last update
+  // Find the student's stop (middle stop or specific)
+  const studentStop = useMemo(() => {
+    if (stops.length === 0) return null
+    // For now, use a middle stop as the student's stop
+    // In a real app, this would be set by the student
+    const midIdx = Math.floor(stops.length / 2)
+    return stops[midIdx]
+  }, [stops])
+
+  // Calculate ETA
+  const eta = useMemo(() => {
+    if (!location || !studentStop || !isLive) return null
+    return calculateETA(location.lat, location.lng, studentStop.lat, studentStop.lng, location.speed)
+  }, [location, studentStop, isLive])
+
+  // Distance to student stop
+  const distanceToStop = useMemo(() => {
+    if (!location || !studentStop) return null
+    const R = 6371000
+    const dLat = (studentStop.lat - location.lat) * Math.PI / 180
+    const dLng = (studentStop.lng - location.lng) * Math.PI / 180
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(location.lat * Math.PI / 180) * Math.cos(studentStop.lat * Math.PI / 180) *
+      Math.sin(dLng / 2) ** 2
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+  }, [location, studentStop])
+
   const lastUpdatedText = useMemo(() => {
     if (!location?.timestamp) return 'Unknown'
     try {
@@ -106,8 +164,46 @@ export default function MyRoute() {
     <div className="p-4 space-y-4">
       <h2 className="text-lg font-bold text-gray-900">My Route</h2>
 
+      {/* ETA Card - Uber-style prominent display */}
+      {isLive && eta && studentStop && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="rounded-2xl border-0 shadow-md bg-gradient-to-r from-emerald-500 to-teal-500 text-white overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Navigation className="w-4 h-4" />
+                    <span className="text-sm font-semibold text-emerald-100">Bus on the way</span>
+                  </div>
+                  <p className="text-3xl font-bold">{eta}</p>
+                  <p className="text-xs text-emerald-200 mt-0.5">
+                    to {studentStop.name}
+                    {distanceToStop && ` · ${(distanceToStop / 1000).toFixed(1)} km away`}
+                  </p>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                    <span className="text-2xl font-bold">{location?.speed ? Math.round(location.speed) : '--'}</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-200 mt-1">km/h</span>
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div className="mt-3 bg-white/20 rounded-full h-1.5">
+                <motion.div
+                  className="bg-white rounded-full h-1.5"
+                  initial={{ width: '0%' }}
+                  animate={{ width: '60%' }}
+                  transition={{ duration: 2, ease: 'easeOut' }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Bus Details */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: isLive ? 0.1 : 0 }}>
         <Card className="rounded-2xl border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3 mb-4">
@@ -149,7 +245,7 @@ export default function MyRoute() {
       </motion.div>
 
       {/* Map Section */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
         <Card className="rounded-2xl border-0 shadow-sm overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold">Live Route Map</CardTitle>
@@ -162,6 +258,9 @@ export default function MyRoute() {
                 busLocation={busLocation}
                 trail={trailPoints}
                 showLiveBus={isLive}
+                interpolatedPosition={interpolatedPosition}
+                studentStop={studentStop}
+                eta={eta}
                 className="rounded-none"
               />
             </div>
@@ -170,7 +269,7 @@ export default function MyRoute() {
       </motion.div>
 
       {/* Live Tracking Indicator */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <Card className="rounded-2xl border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -184,8 +283,8 @@ export default function MyRoute() {
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-emerald-700">Bus is live</p>
                     <p className="text-xs text-muted-foreground">
-                      Last updated {lastUpdatedText}
-                      {location?.speed != null && ` · Speed: ${Math.round(location.speed)} km/h`}
+                      Updated {lastUpdatedText}
+                      {location?.speed != null && ` · ${Math.round(location.speed)} km/h`}
                     </p>
                   </div>
                 </>
@@ -207,7 +306,7 @@ export default function MyRoute() {
       </motion.div>
 
       {/* Driver Info */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
         <Card className="rounded-2xl border-0 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold">Driver</CardTitle>

@@ -36,6 +36,9 @@ interface BusMapProps {
   className?: string
   onMapClick?: (lat: number, lng: number) => void
   fleetBuses?: FleetBus[]
+  interpolatedPosition?: { lat: number; lng: number } | null
+  studentStop?: { name: string; lat: number; lng: number } | null
+  eta?: string | null
 }
 
 export default function BusMap(props: BusMapProps) {

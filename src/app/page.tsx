@@ -5,8 +5,9 @@ import dynamic from 'next/dynamic'
 import LoginScreen from '@/components/shuttle/login-screen'
 import Header from '@/components/shuttle/header'
 import BottomNav from '@/components/shuttle/bottom-nav'
+import { SocketProvider } from '@/components/shuttle/shared/socket-provider'
 
-// Loading skeleton for dynamically imported components
+// Loading skeleton
 function ViewSkeleton() {
   return (
     <div className="p-4 space-y-4">
@@ -20,7 +21,7 @@ function ViewSkeleton() {
   )
 }
 
-// Dynamic imports - only loaded when needed
+// Dynamic imports - code splitting for performance
 const OwnerDashboard = dynamic(() => import('@/components/shuttle/owner/dashboard'), { loading: () => <ViewSkeleton /> })
 const BusManagement = dynamic(() => import('@/components/shuttle/owner/bus-management'), { loading: () => <ViewSkeleton /> })
 const StudentManagement = dynamic(() => import('@/components/shuttle/owner/student-management'), { loading: () => <ViewSkeleton /> })
@@ -35,13 +36,17 @@ const StudentDashboard = dynamic(() => import('@/components/shuttle/student/dash
 const MyRoute = dynamic(() => import('@/components/shuttle/student/my-route'), { loading: () => <ViewSkeleton /> })
 const StudentPaymentHistory = dynamic(() => import('@/components/shuttle/student/payment-history'), { loading: () => <ViewSkeleton /> })
 const NotificationPanel = dynamic(() => import('@/components/shuttle/shared/notification-panel'), { loading: () => <ViewSkeleton /> })
+const ShuttleFinder = dynamic(() => import('@/components/shuttle/shuttle-finder'), { loading: () => <ViewSkeleton /> })
 
-export default function Home() {
+function AppContent() {
   const { currentUser, activeTab } = useAppStore()
 
   if (!currentUser) return <LoginScreen />
 
   const renderContent = () => {
+    // Shared views
+    if (activeTab === 'find') return <ShuttleFinder />
+
     // Owner views
     if (currentUser.role === 'OWNER') {
       switch (activeTab) {
@@ -90,5 +95,13 @@ export default function Home() {
       </main>
       <BottomNav />
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <SocketProvider>
+      <AppContent />
+    </SocketProvider>
   )
 }
