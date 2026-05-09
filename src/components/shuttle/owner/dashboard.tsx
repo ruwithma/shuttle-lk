@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Users, TrendingUp, TrendingDown, DollarSign, Plus, Receipt, MapPin } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useAppStore } from '@/lib/store'
+import { fetchDashboardData, isCacheFresh } from '@/lib/data-fetcher'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -12,12 +13,14 @@ import { Badge } from '@/components/ui/badge'
 import StatCard from '@/components/shuttle/shared/stat-card'
 import RefreshIndicator from '@/components/shuttle/shared/refresh-indicator'
 import { format } from 'date-fns'
+import type { DashboardStats } from '@/lib/types'
 
 const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
 export default function OwnerDashboard() {
-  const { currentUser, dashboardStats, setDashboardStats, setActiveTab, setPayments } = useAppStore()
-  const [loading, setLoading] = useState(true)
+  const { currentUser, dashboardStats, setDashboardStats, setActiveTab } = useAppStore()
+  // Skip loading skeleton if we already have cached data that is fresh
+  const [loading, setLoading] = useState(!dashboardStats || !isCacheFresh('OWNER'))
   const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
@@ -28,19 +31,13 @@ export default function OwnerDashboard() {
     if (!currentUser) return
     if (isRefresh) {
       setRefreshing(true)
-    } else {
+    } else if (!dashboardStats || !isCacheFresh('OWNER')) {
       setLoading(true)
     }
     try {
-      const res = await fetch(`/api/dashboard?userId=${currentUser.id}&role=OWNER`)
-      if (res.ok) {
-        const data = await res.json()
+      const data = await fetchDashboardData<DashboardStats>(currentUser.id, 'OWNER')
+      if (data) {
         setDashboardStats(data)
-      }
-      const payRes = await fetch(`/api/payments?ownerId=${currentUser.id}`)
-      if (payRes.ok) {
-        const payData = await payRes.json()
-        setPayments(payData)
       }
     } catch {
       // silently fail
@@ -48,7 +45,7 @@ export default function OwnerDashboard() {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [currentUser, setDashboardStats, setPayments])
+  }, [currentUser, setDashboardStats, dashboardStats])
 
   if (loading) {
     return (

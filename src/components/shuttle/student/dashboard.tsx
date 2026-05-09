@@ -4,11 +4,13 @@ import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { CheckCircle2, AlertCircle, Clock, CreditCard, Bus as BusIcon, MapPin, Radio } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
+import { fetchDashboardData, isCacheFresh } from '@/lib/data-fetcher'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import RefreshIndicator from '@/components/shuttle/shared/refresh-indicator'
+import type { StudentDashboard as StudentDashboardType } from '@/lib/types'
 
 const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
@@ -20,7 +22,8 @@ const statusConfig = {
 
 export default function StudentDashboard() {
   const { currentUser, studentDashboard, setStudentDashboard, setActiveTab, busLocations } = useAppStore()
-  const [loading, setLoading] = useState(true)
+  // Skip loading skeleton if we already have cached data that is fresh
+  const [loading, setLoading] = useState(!studentDashboard || !isCacheFresh('STUDENT'))
   const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
@@ -31,13 +34,12 @@ export default function StudentDashboard() {
     if (!currentUser) return
     if (isRefresh) {
       setRefreshing(true)
-    } else {
+    } else if (!studentDashboard || !isCacheFresh('STUDENT')) {
       setLoading(true)
     }
     try {
-      const res = await fetch(`/api/dashboard?userId=${currentUser.id}&role=STUDENT`)
-      if (res.ok) {
-        const data = await res.json()
+      const data = await fetchDashboardData<StudentDashboardType>(currentUser.id, 'STUDENT')
+      if (data) {
         setStudentDashboard(data)
       }
     } catch {
@@ -46,7 +48,7 @@ export default function StudentDashboard() {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [currentUser, setStudentDashboard])
+  }, [currentUser, setStudentDashboard, studentDashboard])
 
   if (loading) {
     return (

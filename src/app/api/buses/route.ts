@@ -22,7 +22,10 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json(buses, { status: 200 })
+    return NextResponse.json(buses, {
+      status: 200,
+      headers: { 'Cache-Control': 'private, max-age=30' },
+    })
   } catch (error) {
     if (process.env.NODE_ENV === 'development') console.error('Get buses error:', error)
     return NextResponse.json({ error: 'Failed to fetch buses' }, { status: 500 })

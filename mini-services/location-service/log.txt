@@ -12,3 +12,19 @@ $ bun --hot index.ts
 [connection] socket=hqZoMP4DuqfymEMkAAAB
 [subscribe-bus] socket=hqZoMP4DuqfymEMkAAAB joined bus:cmoydoggf000gmgfadtofe0bq
 [disconnect] socket=hqZoMP4DuqfymEMkAAAB (reason: client namespace disconnect)
+[connection] socket=O68XdKcdA-OKLk8wAAAE
+[subscribe-owner] socket=O68XdKcdA-OKLk8wAAAE joined owner:cmoydogg10000mgfaaukv79uo
+[unsubscribe-owner] socket=O68XdKcdA-OKLk8wAAAE left owner:cmoydogg10000mgfaaukv79uo
+[disconnect] socket=O68XdKcdA-OKLk8wAAAE (reason: client namespace disconnect)
+[connection] socket=BO_XQWaJcL1Z6abkAAAG
+[driver-start] socket=BO_XQWaJcL1Z6abkAAAG bus=cmoydoggf000gmgfadtofe0bq driver=Nimal Silva busName=Kadawatha Route owner=cmoydogg10000mgfaaukv79uo
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=37.751 lng=-97.822 speed=- heading=-
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=37.751 lng=-97.822 speed=- heading=-
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=37.751 lng=-97.822 speed=- heading=-
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=37.751 lng=-97.822 speed=- heading=-
+[disconnect] socket=BO_XQWaJcL1Z6abkAAAG was driver of bus=cmoydoggf000gmgfadtofe0bq, removed from live map (reason: client namespace disconnect)
+[connection] socket=OpBHSS7qdG22ofuNAAAI
+[subscribe-bus] socket=OpBHSS7qdG22ofuNAAAI joined bus:cmoydoggf000gmgfadtofe0bq
+[disconnect] socket=OpBHSS7qdG22ofuNAAAI (reason: client namespace disconnect)
+$ bun --hot index.ts
+🚌 Location tracking WebSocket server running on port 3003

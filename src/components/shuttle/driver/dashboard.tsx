@@ -5,17 +5,20 @@ import { motion } from 'framer-motion'
 import { Bus as BusIcon, CreditCard, HandCoins, Users, Radio, CircleOff, Navigation, Gauge } from 'lucide-react'
 import { io, Socket } from 'socket.io-client'
 import { useAppStore } from '@/lib/store'
+import { fetchDashboardData, isCacheFresh } from '@/lib/data-fetcher'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import RefreshIndicator from '@/components/shuttle/shared/refresh-indicator'
 import { format } from 'date-fns'
+import type { DriverDashboard as DriverDashboardType } from '@/lib/types'
 
 const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
 export default function DriverDashboard() {
   const { currentUser, driverDashboard, setDriverDashboard, isDriverLive, setIsDriverLive } = useAppStore()
-  const [loading, setLoading] = useState(true)
+  // Skip loading skeleton if we already have cached data that is fresh
+  const [loading, setLoading] = useState(!driverDashboard || !isCacheFresh('DRIVER'))
   const [refreshing, setRefreshing] = useState(false)
   const [simulationMode, setSimulationMode] = useState(false)
   const [currentSpeed, setCurrentSpeed] = useState<number | null>(null)
@@ -32,13 +35,12 @@ export default function DriverDashboard() {
     if (!currentUser) return
     if (isRefresh) {
       setRefreshing(true)
-    } else {
+    } else if (!driverDashboard || !isCacheFresh('DRIVER')) {
       setLoading(true)
     }
     try {
-      const res = await fetch(`/api/dashboard?userId=${currentUser.id}&role=DRIVER`)
-      if (res.ok) {
-        const data = await res.json()
+      const data = await fetchDashboardData<DriverDashboardType>(currentUser.id, 'DRIVER')
+      if (data) {
         setDriverDashboard(data)
       }
     } catch {
@@ -47,7 +49,7 @@ export default function DriverDashboard() {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [currentUser, setDriverDashboard])
+  }, [currentUser, setDriverDashboard, driverDashboard])
 
   const data = driverDashboard || {
     todayCollection: 0,

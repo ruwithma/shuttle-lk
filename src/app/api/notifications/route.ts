@@ -30,7 +30,7 @@ export async function GET(request: Request) {
       notifications,
       total: notifications.length,
       unreadCount,
-    }, { status: 200 })
+    }, { status: 200, headers: { 'Cache-Control': 'private, max-age=15' } })
   } catch (error) {
     if (process.env.NODE_ENV === 'development') console.error('Get notifications error:', error)
     return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 })

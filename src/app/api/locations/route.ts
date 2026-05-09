@@ -83,7 +83,9 @@ export async function GET(request: NextRequest) {
       trail.reverse()
     }
 
-    return NextResponse.json({ locations, trail })
+    return NextResponse.json({ locations, trail }, {
+      headers: { 'Cache-Control': 'private, max-age=5' },
+    })
   } catch (error) {
     if (process.env.NODE_ENV === 'development') console.error('Get locations error:', error)
     return NextResponse.json(

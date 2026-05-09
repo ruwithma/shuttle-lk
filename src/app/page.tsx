@@ -1,23 +1,40 @@
 'use client'
 
 import { useAppStore } from '@/lib/store'
+import dynamic from 'next/dynamic'
 import LoginScreen from '@/components/shuttle/login-screen'
 import Header from '@/components/shuttle/header'
 import BottomNav from '@/components/shuttle/bottom-nav'
-import OwnerDashboard from '@/components/shuttle/owner/dashboard'
-import BusManagement from '@/components/shuttle/owner/bus-management'
-import StudentManagement from '@/components/shuttle/owner/student-management'
-import PaymentTracking from '@/components/shuttle/owner/payment-tracking'
-import OwnerMore from '@/components/shuttle/owner/owner-more'
-import DriverDashboard from '@/components/shuttle/driver/dashboard'
-import CollectPayment from '@/components/shuttle/driver/collect-payment'
-import DriverHistory from '@/components/shuttle/driver/driver-history'
-import StudentDashboard from '@/components/shuttle/student/dashboard'
-import MyRoute from '@/components/shuttle/student/my-route'
-import StudentPaymentHistory from '@/components/shuttle/student/payment-history'
-import NotificationPanel from '@/components/shuttle/shared/notification-panel'
-import ExpenseTracking from '@/components/shuttle/owner/expense-tracking'
-import FleetTracking from '@/components/shuttle/owner/fleet-tracking'
+
+// Loading skeleton for dynamically imported components
+function ViewSkeleton() {
+  return (
+    <div className="p-4 space-y-4">
+      <div className="h-8 bg-gray-100 rounded-lg animate-pulse w-48" />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
+        <div className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
+      </div>
+      <div className="h-48 bg-gray-100 rounded-2xl animate-pulse" />
+    </div>
+  )
+}
+
+// Dynamic imports - only loaded when needed
+const OwnerDashboard = dynamic(() => import('@/components/shuttle/owner/dashboard'), { loading: () => <ViewSkeleton /> })
+const BusManagement = dynamic(() => import('@/components/shuttle/owner/bus-management'), { loading: () => <ViewSkeleton /> })
+const StudentManagement = dynamic(() => import('@/components/shuttle/owner/student-management'), { loading: () => <ViewSkeleton /> })
+const PaymentTracking = dynamic(() => import('@/components/shuttle/owner/payment-tracking'), { loading: () => <ViewSkeleton /> })
+const OwnerMore = dynamic(() => import('@/components/shuttle/owner/owner-more'), { loading: () => <ViewSkeleton /> })
+const ExpenseTracking = dynamic(() => import('@/components/shuttle/owner/expense-tracking'), { loading: () => <ViewSkeleton /> })
+const FleetTracking = dynamic(() => import('@/components/shuttle/owner/fleet-tracking'), { loading: () => <ViewSkeleton /> })
+const DriverDashboard = dynamic(() => import('@/components/shuttle/driver/dashboard'), { loading: () => <ViewSkeleton /> })
+const CollectPayment = dynamic(() => import('@/components/shuttle/driver/collect-payment'), { loading: () => <ViewSkeleton /> })
+const DriverHistory = dynamic(() => import('@/components/shuttle/driver/driver-history'), { loading: () => <ViewSkeleton /> })
+const StudentDashboard = dynamic(() => import('@/components/shuttle/student/dashboard'), { loading: () => <ViewSkeleton /> })
+const MyRoute = dynamic(() => import('@/components/shuttle/student/my-route'), { loading: () => <ViewSkeleton /> })
+const StudentPaymentHistory = dynamic(() => import('@/components/shuttle/student/payment-history'), { loading: () => <ViewSkeleton /> })
+const NotificationPanel = dynamic(() => import('@/components/shuttle/shared/notification-panel'), { loading: () => <ViewSkeleton /> })
 
 export default function Home() {
   const { currentUser, activeTab } = useAppStore()
@@ -28,56 +45,37 @@ export default function Home() {
     // Owner views
     if (currentUser.role === 'OWNER') {
       switch (activeTab) {
-        case 'dashboard':
-          return <OwnerDashboard />
-        case 'buses':
-          return <BusManagement />
-        case 'students':
-          return <StudentManagement />
-        case 'payments':
-          return <PaymentTracking />
-        case 'expenses':
-          return <ExpenseTracking />
-        case 'fleet-tracking':
-          return <FleetTracking />
-        case 'notifications':
-          return <NotificationPanel />
-        case 'more':
-          return <OwnerMore />
-        default:
-          return <OwnerDashboard />
+        case 'dashboard': return <OwnerDashboard />
+        case 'buses': return <BusManagement />
+        case 'students': return <StudentManagement />
+        case 'payments': return <PaymentTracking />
+        case 'expenses': return <ExpenseTracking />
+        case 'fleet-tracking': return <FleetTracking />
+        case 'notifications': return <NotificationPanel />
+        case 'more': return <OwnerMore />
+        default: return <OwnerDashboard />
       }
     }
 
     // Driver views
     if (currentUser.role === 'DRIVER') {
       switch (activeTab) {
-        case 'dashboard':
-          return <DriverDashboard />
-        case 'collect':
-          return <CollectPayment />
-        case 'driver-history':
-          return <DriverHistory />
-        case 'more':
-          return <NotificationPanel />
-        default:
-          return <DriverDashboard />
+        case 'dashboard': return <DriverDashboard />
+        case 'collect': return <CollectPayment />
+        case 'driver-history': return <DriverHistory />
+        case 'more': return <NotificationPanel />
+        default: return <DriverDashboard />
       }
     }
 
     // Student views
     if (currentUser.role === 'STUDENT') {
       switch (activeTab) {
-        case 'dashboard':
-          return <StudentDashboard />
-        case 'route':
-          return <MyRoute />
-        case 'payments':
-          return <StudentPaymentHistory />
-        case 'more':
-          return <NotificationPanel />
-        default:
-          return <StudentDashboard />
+        case 'dashboard': return <StudentDashboard />
+        case 'route': return <MyRoute />
+        case 'payments': return <StudentPaymentHistory />
+        case 'more': return <NotificationPanel />
+        default: return <StudentDashboard />
       }
     }
 

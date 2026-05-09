@@ -4,6 +4,25 @@ import { useEffect, useMemo } from 'react'
 import { MapContainer, TileLayer, Polyline, CircleMarker, Tooltip, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 
+// Dynamically inject Leaflet CSS only when the map component mounts
+let leafletCssInjected = false
+function injectLeafletCss() {
+  if (leafletCssInjected) return
+  if (typeof document === 'undefined') return
+  // Check if already present (e.g. from SSR head)
+  const existing = document.querySelector('link[href*="leaflet"]')
+  if (existing) {
+    leafletCssInjected = true
+    return
+  }
+  const link = document.createElement('link')
+  link.rel = 'stylesheet'
+  link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+  link.crossOrigin = ''
+  document.head.appendChild(link)
+  leafletCssInjected = true
+}
+
 interface FleetBus {
   busId: string
   busName: string
@@ -178,6 +197,11 @@ export default function BusMapInner({
   onMapClick,
   fleetBuses,
 }: BusMapProps) {
+  // Inject Leaflet CSS on first mount
+  useEffect(() => {
+    injectLeafletCss()
+  }, [])
+
   const busIcon = useMemo(() => createBusIcon(busLocation?.heading), [busLocation?.heading])
 
   const stopMarkers = useMemo(() => {

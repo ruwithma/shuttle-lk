@@ -56,7 +56,10 @@ export async function GET(request: Request) {
     })
 
     // Return flat array for frontend compatibility
-    return NextResponse.json(payments, { status: 200 })
+    return NextResponse.json(payments, {
+      status: 200,
+      headers: { 'Cache-Control': 'private, max-age=10' },
+    })
   } catch (error) {
     if (process.env.NODE_ENV === 'development') console.error('Get payments error:', error)
     return NextResponse.json({ error: 'Failed to fetch payments' }, { status: 500 })

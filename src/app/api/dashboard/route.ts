@@ -23,47 +23,49 @@ export async function GET(request: Request) {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
 
+    const cacheHeaders = {
+      'Cache-Control': 'private, max-age=15, stale-while-revalidate=30',
+    }
+
     if (role === 'OWNER') {
-      // Get all buses owned by this user
       const ownedBuses = await db.bus.findMany({
         where: { ownerId: userId },
         select: { id: true },
       })
       const busIds = ownedBuses.map(b => b.id)
 
-      // Total students (active subscriptions across owned buses)
-      const totalSubscriptions = await db.subscription.count({
-        where: { busId: { in: busIds }, active: true },
-      })
+      // Run independent queries in parallel
+      const [totalSubscriptions, monthlyPayments, monthlyExpenses, monthlySubscriptions, recentPayments] = await Promise.all([
+        db.subscription.count({ where: { busId: { in: busIds }, active: true } }),
+        db.payment.findMany({
+          where: { busId: { in: busIds }, date: { gte: monthStart, lte: monthEnd } },
+          select: { amount: true },
+        }),
+        db.expense.findMany({
+          where: { busId: { in: busIds }, date: { gte: monthStart, lte: monthEnd } },
+          select: { amount: true },
+        }),
+        db.subscription.findMany({
+          where: { busId: { in: busIds }, paymentType: 'MONTHLY', active: true },
+          select: { studentId: true },
+        }),
+        db.payment.findMany({
+          where: { busId: { in: busIds } },
+          include: {
+            student: { select: { id: true, name: true, phone: true } },
+            bus: { select: { id: true, name: true } },
+            collector: { select: { id: true, name: true } },
+          },
+          orderBy: { date: 'desc' },
+          take: 10,
+        }),
+      ])
 
-      // Monthly income
-      const monthlyPayments = await db.payment.findMany({
-        where: {
-          busId: { in: busIds },
-          date: { gte: monthStart, lte: monthEnd },
-        },
-        select: { amount: true },
-      })
       const monthlyIncome = monthlyPayments.reduce((sum, p) => sum + p.amount, 0)
-
-      // Total expenses this month
-      const monthlyExpenses = await db.expense.findMany({
-        where: {
-          busId: { in: busIds },
-          date: { gte: monthStart, lte: monthEnd },
-        },
-        select: { amount: true },
-      })
       const totalExpenses = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0)
-
-      // Net profit
       const netProfit = monthlyIncome - totalExpenses
 
-      // Payment collection rate - monthly students who have paid vs total monthly students
-      const monthlySubscriptions = await db.subscription.findMany({
-        where: { busId: { in: busIds }, paymentType: 'MONTHLY', active: true },
-        select: { studentId: true },
-      })
+      // Collection rate
       const monthlyStudentIds = monthlySubscriptions.map(s => s.studentId)
       const paidMonthlyStudents = await db.payment.findMany({
         where: {
@@ -79,49 +81,34 @@ export async function GET(request: Request) {
         ? (uniquePaidStudents.size / monthlyStudentIds.length) * 100
         : 0
 
-      // Recent payments
-      const recentPayments = await db.payment.findMany({
-        where: { busId: { in: busIds } },
-        include: {
-          student: { select: { id: true, name: true, phone: true } },
-          bus: { select: { id: true, name: true } },
-          collector: { select: { id: true, name: true } },
-        },
-        orderBy: { date: 'desc' },
-        take: 10,
-      })
+      // Chart data - OPTIMIZED: 2 queries instead of 12
+      const chartStart = new Date(now.getFullYear(), now.getMonth() - 5, 1)
+      const [chartPayments, chartExpenses] = await Promise.all([
+        db.payment.findMany({
+          where: { busId: { in: busIds }, date: { gte: chartStart, lte: monthEnd } },
+          select: { amount: true, date: true },
+        }),
+        db.expense.findMany({
+          where: { busId: { in: busIds }, date: { gte: chartStart, lte: monthEnd } },
+          select: { amount: true, date: true },
+        }),
+      ])
 
-      // Income vs expenses chart data (last 6 months)
+      // Group by month in JS
       const chartData = []
       for (let i = 5; i >= 0; i--) {
         const chartMonth = new Date(now.getFullYear(), now.getMonth() - i, 1)
         const chartMonthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59)
         const chartMonthStr = `${chartMonth.getFullYear()}-${String(chartMonth.getMonth() + 1).padStart(2, '0')}`
 
-        const incomePayments = await db.payment.findMany({
-          where: {
-            busId: { in: busIds },
-            date: { gte: chartMonth, lte: chartMonthEnd },
-          },
-          select: { amount: true },
-        })
-        const income = incomePayments.reduce((sum, p) => sum + p.amount, 0)
+        const income = chartPayments
+          .filter(p => new Date(p.date) >= chartMonth && new Date(p.date) <= chartMonthEnd)
+          .reduce((sum, p) => sum + p.amount, 0)
+        const expenses = chartExpenses
+          .filter(e => new Date(e.date) >= chartMonth && new Date(e.date) <= chartMonthEnd)
+          .reduce((sum, e) => sum + e.amount, 0)
 
-        const expenseRecords = await db.expense.findMany({
-          where: {
-            busId: { in: busIds },
-            date: { gte: chartMonth, lte: chartMonthEnd },
-          },
-          select: { amount: true },
-        })
-        const expenses = expenseRecords.reduce((sum, e) => sum + e.amount, 0)
-
-        chartData.push({
-          month: chartMonthStr,
-          income,
-          expenses,
-          profit: income - expenses,
-        })
+        chartData.push({ month: chartMonthStr, income, expenses, profit: income - expenses })
       }
 
       return NextResponse.json({
@@ -133,42 +120,32 @@ export async function GET(request: Request) {
         collectionRate: Math.round(collectionRate * 10) / 10,
         recentPayments,
         monthlyData: chartData,
-      }, { status: 200 })
+      }, { status: 200, headers: cacheHeaders })
     }
 
     if (role === 'DRIVER') {
-      // Get assigned bus
       const assignedBus = await db.bus.findUnique({
         where: { driverId: userId },
-        include: {
-          owner: { select: { id: true, name: true, phone: true } },
-        },
+        include: { owner: { select: { id: true, name: true, phone: true } } },
       })
 
       if (!assignedBus) {
         return NextResponse.json({ error: 'No bus assigned' }, { status: 404 })
       }
 
-      // Today's collection
-      const todayPayments = await db.payment.findMany({
-        where: {
-          busId: assignedBus.id,
-          date: { gte: todayStart, lte: todayEnd },
-        },
-        include: {
-          student: { select: { id: true, name: true, phone: true } },
-        },
-        orderBy: { date: 'desc' },
-      })
-      const todayCollection = todayPayments.reduce((sum, p) => sum + p.amount, 0)
+      const [todayPayments, busSubscriptions] = await Promise.all([
+        db.payment.findMany({
+          where: { busId: assignedBus.id, date: { gte: todayStart, lte: todayEnd } },
+          include: { student: { select: { id: true, name: true, phone: true } } },
+          orderBy: { date: 'desc' },
+        }),
+        db.subscription.findMany({
+          where: { busId: assignedBus.id, active: true },
+          include: { student: { select: { id: true, name: true, phone: true } } },
+        }),
+      ])
 
-      // Get subscriptions for this bus (for collect payment feature)
-      const busSubscriptions = await db.subscription.findMany({
-        where: { busId: assignedBus.id, active: true },
-        include: {
-          student: { select: { id: true, name: true, phone: true } },
-        },
-      })
+      const todayCollection = todayPayments.reduce((sum, p) => sum + p.amount, 0)
 
       return NextResponse.json({
         role: 'DRIVER',
@@ -177,50 +154,42 @@ export async function GET(request: Request) {
         todayPayments,
         todayPaymentCount: todayPayments.length,
         subscriptions: busSubscriptions,
-      }, { status: 200 })
+      }, { status: 200, headers: cacheHeaders })
     }
 
     if (role === 'STUDENT') {
-      // Get subscriptions
-      const subscriptions = await db.subscription.findMany({
-        where: { studentId: userId, active: true },
-        include: {
-          bus: {
-            select: {
-              id: true,
-              name: true,
-              plateNumber: true,
-              routeName: true,
-              routeStart: true,
-              routeEnd: true,
-              routeStops: true,
-              driver: { select: { id: true, name: true, phone: true } },
+      const [subscriptions, monthlyPayments, dailyPaymentsThisMonth, paymentHistory] = await Promise.all([
+        db.subscription.findMany({
+          where: { studentId: userId, active: true },
+          include: {
+            bus: {
+              select: {
+                id: true, name: true, plateNumber: true, routeName: true,
+                routeStart: true, routeEnd: true, routeStops: true,
+                driver: { select: { id: true, name: true, phone: true } },
+              },
             },
           },
-        },
-      })
+        }),
+        db.payment.findMany({
+          where: { studentId: userId, month: currentMonth, paymentType: 'MONTHLY' },
+        }),
+        db.payment.findMany({
+          where: { studentId: userId, date: { gte: monthStart, lte: monthEnd }, paymentType: 'DAILY' },
+          orderBy: { date: 'desc' },
+        }),
+        db.payment.findMany({
+          where: { studentId: userId },
+          include: {
+            bus: { select: { id: true, name: true } },
+            collector: { select: { id: true, name: true } },
+          },
+          orderBy: { date: 'desc' },
+          take: 20,
+        }),
+      ])
 
-      // Check payment status for current month
-      const monthlyPayments = await db.payment.findMany({
-        where: {
-          studentId: userId,
-          month: currentMonth,
-          paymentType: 'MONTHLY',
-        },
-      })
       const paidMonthly = monthlyPayments.length > 0
-
-      // Daily payments this month
-      const dailyPaymentsThisMonth = await db.payment.findMany({
-        where: {
-          studentId: userId,
-          date: { gte: monthStart, lte: monthEnd },
-          paymentType: 'DAILY',
-        },
-        orderBy: { date: 'desc' },
-      })
-
-      // Determine payment status
       let paymentStatus = 'UNPAID'
       let nextDueDate: string | null = null
       const monthlySub = subscriptions.find(s => s.paymentType === 'MONTHLY')
@@ -229,38 +198,19 @@ export async function GET(request: Request) {
       if (monthlySub) {
         if (paidMonthly) {
           paymentStatus = 'PAID'
-          // Next due date is the 1st of next month
-          const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-          nextDueDate = nextMonth.toISOString()
+          nextDueDate = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
         } else {
           paymentStatus = 'UNPAID'
           nextDueDate = monthStart.toISOString()
         }
       } else if (dailySub) {
-        // For daily, check if paid today
         const todayPayments = await db.payment.findMany({
-          where: {
-            studentId: userId,
-            date: { gte: todayStart, lte: todayEnd },
-            paymentType: 'DAILY',
-          },
+          where: { studentId: userId, date: { gte: todayStart, lte: todayEnd }, paymentType: 'DAILY' },
         })
         paymentStatus = todayPayments.length > 0 ? 'PAID' : 'UNPAID'
         nextDueDate = now.toISOString()
       }
 
-      // Payment history
-      const paymentHistory = await db.payment.findMany({
-        where: { studentId: userId },
-        include: {
-          bus: { select: { id: true, name: true } },
-          collector: { select: { id: true, name: true } },
-        },
-        orderBy: { date: 'desc' },
-        take: 20,
-      })
-
-      // Extract primary subscription and bus for frontend convenience
       const primarySub = monthlySub || dailySub || subscriptions[0]
       const bus = primarySub?.bus || null
 
@@ -274,7 +224,7 @@ export async function GET(request: Request) {
         paymentHistory,
         dailyPaymentsThisMonth,
         monthlyPaymentsPaid: paidMonthly,
-      }, { status: 200 })
+      }, { status: 200, headers: cacheHeaders })
     }
 
     return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
