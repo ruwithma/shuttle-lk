@@ -44,6 +44,13 @@ interface AppState {
   isLoading: boolean
   setIsLoading: (loading: boolean) => void
 
+  // Location tracking state
+  isDriverLive: boolean
+  setIsDriverLive: (live: boolean) => void
+  busLocations: Record<string, { lat: number; lng: number; speed?: number; heading?: number; timestamp?: string; isLive: boolean }>
+  setBusLocations: (locations: Record<string, { lat: number; lng: number; speed?: number; heading?: number; timestamp?: string; isLive: boolean }>) => void
+  updateBusLocation: (busId: string, location: { lat: number; lng: number; speed?: number; heading?: number; timestamp?: string; isLive: boolean }) => void
+
   // Helpers
   logout: () => void
 }
@@ -79,6 +86,16 @@ export const useAppStore = create<AppState>((set) => ({
   isLoading: false,
   setIsLoading: (loading) => set({ isLoading: loading }),
 
+  // Location tracking state
+  isDriverLive: false,
+  setIsDriverLive: (live) => set({ isDriverLive: live }),
+  busLocations: {},
+  setBusLocations: (locations) => set({ busLocations: locations }),
+  updateBusLocation: (busId, location) =>
+    set((state) => ({
+      busLocations: { ...state.busLocations, [busId]: location },
+    })),
+
   // Helpers
   logout: () =>
     set({
@@ -93,5 +110,7 @@ export const useAppStore = create<AppState>((set) => ({
       driverDashboard: null,
       studentDashboard: null,
       isLoading: false,
+      isDriverLive: false,
+      busLocations: {},
     }),
 }))

@@ -279,7 +279,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
   } catch (error) {
-    console.error('Dashboard error:', error)
+    if (process.env.NODE_ENV === 'development') console.error('Dashboard error:', error)
     return NextResponse.json({ error: 'Failed to fetch dashboard data' }, { status: 500 })
   }
 }

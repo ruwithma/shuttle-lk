@@ -33,7 +33,7 @@ export default function NotificationPanel() {
       const res = await fetch(`/api/notifications?userId=${currentUser.id}`)
       if (res.ok) {
         const data = await res.json()
-        setNotifications(data)
+        setNotifications(data.notifications || [])
       }
     } catch {
       // silently fail

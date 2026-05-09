@@ -81,6 +81,10 @@ export async function POST() {
           routeStart: 'Kadawatha',
           routeEnd: 'University of Kelaniya',
           routeStops: 'Kadawatha Town,Mabola,Wattala,Kelaniya Bridge,University of Kelaniya',
+          routeCoordinates: '[ [6.9350,79.8485], [6.9390,79.8500], [6.9480,79.8610], [6.9550,79.8720], [6.9630,79.8850], [6.9710,79.8950], [6.9750,79.9030] ]',
+          routeStopCoordinates: '{ "Kadawatha Town": [6.9350,79.8485], "Mabola": [6.9480,79.8610], "Wattala": [6.9630,79.8850], "Kelaniya Bridge": [6.9710,79.8950], "University of Kelaniya": [6.9750,79.9030] }',
+          currentLat: 6.9480,
+          currentLng: 79.8610,
           ownerId: owner.id,
           driverId: driverNimal.id,
           active: true,
@@ -96,6 +100,10 @@ export async function POST() {
           routeStart: 'Kiribathgoda',
           routeEnd: 'University of Kelaniya',
           routeStops: 'Kiribathgoda Town,Kadawatha Road,Makola,Kelaniya,University of Kelaniya',
+          routeCoordinates: '[ [6.9770,79.8930], [6.9780,79.8950], [6.9790,79.8980], [6.9800,79.9000], [6.9780,79.9030], [6.9750,79.9030] ]',
+          routeStopCoordinates: '{ "Kiribathgoda Town": [6.9770,79.8930], "Kadawatha Road": [6.9790,79.8980], "Makola": [6.9800,79.9000], "Kelaniya": [6.9780,79.9030], "University of Kelaniya": [6.9750,79.9030] }',
+          currentLat: 6.9790,
+          currentLng: 79.8980,
           ownerId: owner.id,
           driverId: driverSunil.id,
           active: true,
@@ -225,7 +233,7 @@ export async function POST() {
 
     return NextResponse.json({ message: 'Database seeded successfully', data: result }, { status: 201 })
   } catch (error) {
-    console.error('Seed error:', error)
+    if (process.env.NODE_ENV === 'development') console.error('Seed error:', error)
     return NextResponse.json({ error: 'Failed to seed database', details: String(error) }, { status: 500 })
   }
 }

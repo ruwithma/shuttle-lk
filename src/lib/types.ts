@@ -22,6 +22,10 @@ export interface Bus {
   routeStart: string
   routeEnd: string
   routeStops: string
+  routeCoordinates?: string
+  routeStopCoordinates?: string
+  currentLat?: number
+  currentLng?: number
   ownerId: string
   driverId?: string
   active: boolean

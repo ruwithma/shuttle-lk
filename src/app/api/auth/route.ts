@@ -71,7 +71,7 @@ export async function POST(request: Request) {
       ...associatedData,
     }, { status: 200 })
   } catch (error) {
-    console.error('Auth error:', error)
+    if (process.env.NODE_ENV === 'development') console.error('Auth error:', error)
     return NextResponse.json({ error: 'Authentication failed' }, { status: 500 })
   }
 }

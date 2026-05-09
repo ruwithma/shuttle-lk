@@ -1,12 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle2, AlertCircle, Clock, CreditCard, Bus as BusIcon } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Clock, CreditCard, Bus as BusIcon, MapPin, Radio } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
+import RefreshIndicator from '@/components/shuttle/shared/refresh-indicator'
 
 const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
@@ -17,16 +19,21 @@ const statusConfig = {
 }
 
 export default function StudentDashboard() {
-  const { currentUser, studentDashboard, setStudentDashboard } = useAppStore()
+  const { currentUser, studentDashboard, setStudentDashboard, setActiveTab, busLocations } = useAppStore()
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     loadDashboard()
   }, [currentUser])
 
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async (isRefresh = false) => {
     if (!currentUser) return
-    setLoading(true)
+    if (isRefresh) {
+      setRefreshing(true)
+    } else {
+      setLoading(true)
+    }
     try {
       const res = await fetch(`/api/dashboard?userId=${currentUser.id}&role=STUDENT`)
       if (res.ok) {
@@ -37,8 +44,9 @@ export default function StudentDashboard() {
       // silently fail
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
-  }
+  }, [currentUser, setStudentDashboard])
 
   if (loading) {
     return (
@@ -77,7 +85,9 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="relative">
+      <RefreshIndicator loading={refreshing} />
+      <div className="p-4 space-y-4">
       {/* Welcome */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <h2 className="text-xl font-bold text-gray-900">
@@ -140,6 +150,43 @@ export default function StudentDashboard() {
         </Card>
       </motion.div>
 
+      {/* Bus Status & Track Bus */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+        <Card className="rounded-2xl border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-teal-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Bus Status</p>
+                  {data.bus.id && busLocations[data.bus.id]?.isLive ? (
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                      </span>
+                      <p className="text-xs text-emerald-600 font-medium">Bus is on the way</p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-0.5">Bus is offline</p>
+                  )}
+                </div>
+              </div>
+              <Button
+                onClick={() => setActiveTab('route')}
+                size="sm"
+                className="rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs"
+              >
+                <Radio className="w-3.5 h-3.5 mr-1" />
+                Track Bus
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Quick Stats */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <div className="grid grid-cols-2 gap-3">
@@ -159,6 +206,7 @@ export default function StudentDashboard() {
           </Card>
         </div>
       </motion.div>
+    </div>
     </div>
   )
 }

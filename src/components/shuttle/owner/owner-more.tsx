@@ -2,13 +2,16 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Receipt, Bell, FileBarChart, ChevronRight } from 'lucide-react'
+import { Receipt, Bell, FileBarChart, ChevronRight, MapPin } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import ExpenseTracking from '@/components/shuttle/owner/expense-tracking'
 import NotificationPanel from '@/components/shuttle/shared/notification-panel'
+import FleetTracking from '@/components/shuttle/owner/fleet-tracking'
+import OwnerReports from '@/components/shuttle/owner/reports'
 
-type MoreView = 'menu' | 'expenses' | 'notifications'
+type MoreView = 'menu' | 'expenses' | 'notifications' | 'reports' | 'fleet-tracking'
 
 export default function OwnerMore() {
   const { notifications } = useAppStore()
@@ -17,8 +20,19 @@ export default function OwnerMore() {
 
   if (view === 'expenses') return <ExpenseTracking />
   if (view === 'notifications') return <NotificationPanel />
+  if (view === 'fleet-tracking') return <FleetTracking />
+  if (view === 'reports') {
+    return <OwnerReports onBack={() => setView('menu')} />
+  }
 
   const menuItems = [
+    {
+      id: 'fleet-tracking' as MoreView,
+      icon: MapPin,
+      label: 'Fleet Tracking',
+      description: 'Track all buses in real-time',
+      color: 'bg-emerald-50 text-emerald-600',
+    },
     {
       id: 'expenses' as MoreView,
       icon: Receipt,
@@ -34,11 +48,11 @@ export default function OwnerMore() {
       color: 'bg-amber-50 text-amber-600',
     },
     {
-      id: 'menu' as MoreView,
+      id: 'reports' as MoreView,
       icon: FileBarChart,
       label: 'Reports',
       description: 'View financial reports',
-      color: 'bg-emerald-50 text-emerald-600',
+      color: 'bg-purple-50 text-purple-600',
     },
   ]
 
@@ -56,11 +70,7 @@ export default function OwnerMore() {
             <Card
               className="rounded-2xl border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
               onClick={() => {
-                if (item.id === 'menu') {
-                  // Reports placeholder - could expand
-                } else {
                   setView(item.id)
-                }
               }}
             >
               <CardContent className="p-4">

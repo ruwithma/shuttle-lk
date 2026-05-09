@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Users, TrendingUp, TrendingDown, DollarSign, Plus, Receipt, BellRing } from 'lucide-react'
+import { Users, TrendingUp, TrendingDown, DollarSign, Plus, Receipt, MapPin } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useAppStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import StatCard from '@/components/shuttle/shared/stat-card'
+import RefreshIndicator from '@/components/shuttle/shared/refresh-indicator'
 import { format } from 'date-fns'
 
 const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
@@ -17,14 +18,19 @@ const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 export default function OwnerDashboard() {
   const { currentUser, dashboardStats, setDashboardStats, setActiveTab, setPayments } = useAppStore()
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     loadDashboard()
   }, [currentUser])
 
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async (isRefresh = false) => {
     if (!currentUser) return
-    setLoading(true)
+    if (isRefresh) {
+      setRefreshing(true)
+    } else {
+      setLoading(true)
+    }
     try {
       const res = await fetch(`/api/dashboard?userId=${currentUser.id}&role=OWNER`)
       if (res.ok) {
@@ -34,14 +40,15 @@ export default function OwnerDashboard() {
       const payRes = await fetch(`/api/payments?ownerId=${currentUser.id}`)
       if (payRes.ok) {
         const payData = await payRes.json()
-        setPayments(payRes.ok ? payData : [])
+        setPayments(payData)
       }
     } catch {
       // silently fail
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
-  }
+  }, [currentUser, setDashboardStats, setPayments])
 
   if (loading) {
     return (
@@ -75,7 +82,9 @@ export default function OwnerDashboard() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="relative">
+      <RefreshIndicator loading={refreshing} />
+      <div className="p-4 space-y-4">
       {/* Welcome */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -189,7 +198,7 @@ export default function OwnerDashboard() {
             Add Payment
           </Button>
           <Button
-            onClick={() => setActiveTab('more')}
+            onClick={() => setActiveTab('expenses')}
             variant="outline"
             className="flex-1 h-10 rounded-xl text-sm"
           >
@@ -197,12 +206,12 @@ export default function OwnerDashboard() {
             Add Expense
           </Button>
           <Button
-            onClick={() => setActiveTab('more')}
+            onClick={() => setActiveTab('fleet-tracking')}
             variant="outline"
             className="flex-1 h-10 rounded-xl text-sm"
           >
-            <BellRing className="w-4 h-4 mr-1" />
-            Reminders
+            <MapPin className="w-4 h-4 mr-1" />
+            Track Fleet
           </Button>
         </div>
       </motion.div>
@@ -263,6 +272,7 @@ export default function OwnerDashboard() {
           </CardContent>
         </Card>
       </motion.div>
+    </div>
     </div>
   )
 }

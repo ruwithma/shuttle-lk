@@ -63,7 +63,7 @@ export async function GET(request: Request) {
     // Return flat subscriptions array for frontend compatibility
     return NextResponse.json(subscriptions, { status: 200 })
   } catch (error) {
-    console.error('Get students error:', error)
+    if (process.env.NODE_ENV === 'development') console.error('Get students error:', error)
     return NextResponse.json({ error: 'Failed to fetch students' }, { status: 500 })
   }
 }
@@ -134,7 +134,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ data: result }, { status: 201 })
   } catch (error) {
-    console.error('Create student error:', error)
+    if (process.env.NODE_ENV === 'development') console.error('Create student error:', error)
     return NextResponse.json({ error: 'Failed to create student' }, { status: 500 })
   }
 }
@@ -203,7 +203,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ data: result }, { status: 200 })
   } catch (error) {
-    console.error('Update student error:', error)
+    if (process.env.NODE_ENV === 'development') console.error('Update student error:', error)
     const message = error instanceof Error ? error.message : 'Failed to update student/subscription'
     const status = message.includes('not found') ? 404 : 500
     return NextResponse.json({ error: message }, { status })

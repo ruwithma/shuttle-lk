@@ -35,8 +35,13 @@ model Bus {
   routeName   String
   routeStart  String
   routeEnd    String
-  routeStops  String   @default("")
-  ownerId     String
+  routeStops          String   @default("")
+  routeCoordinates    String   @default("")
+  routeStopCoordinates String  @default("")
+  currentLat          Float?
+  currentLng          Float?
+  locationUpdatedAt   DateTime?
+  ownerId             String
   driverId    String?  @unique
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -47,6 +52,7 @@ model Bus {
   subscriptions Subscription[]
   payments     Payment[]
   expenses     Expense[]
+  locations    BusLocation[]
 }
 
 model Subscription {
@@ -99,6 +105,18 @@ model Expense {
 
   bus      Bus  @relation(fields: [busId], references: [id])
   recorder User @relation("ExpenseRecorder", fields: [recordedById], references: [id])
+}
+
+model BusLocation {
+  id        String   @id @default(cuid())
+  busId     String
+  lat       Float
+  lng       Float
+  speed     Float?   // km/h
+  heading   Float?   // degrees
+  timestamp DateTime @default(now())
+
+  bus Bus @relation(fields: [busId], references: [id])
 }
 
 model Notification {

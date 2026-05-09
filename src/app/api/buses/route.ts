@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(buses, { status: 200 })
   } catch (error) {
-    console.error('Get buses error:', error)
+    if (process.env.NODE_ENV === 'development') console.error('Get buses error:', error)
     return NextResponse.json({ error: 'Failed to fetch buses' }, { status: 500 })
   }
 }
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ bus }, { status: 201 })
   } catch (error) {
-    console.error('Create bus error:', error)
+    if (process.env.NODE_ENV === 'development') console.error('Create bus error:', error)
     return NextResponse.json({ error: 'Failed to create bus' }, { status: 500 })
   }
 }
@@ -121,7 +121,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ bus }, { status: 200 })
   } catch (error) {
-    console.error('Update bus error:', error)
+    if (process.env.NODE_ENV === 'development') console.error('Update bus error:', error)
     return NextResponse.json({ error: 'Failed to update bus' }, { status: 500 })
   }
 }
@@ -155,7 +155,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ message: 'Bus deleted successfully' }, { status: 200 })
   } catch (error) {
-    console.error('Delete bus error:', error)
+    if (process.env.NODE_ENV === 'development') console.error('Delete bus error:', error)
     return NextResponse.json({ error: 'Failed to delete bus' }, { status: 500 })
   }
 }

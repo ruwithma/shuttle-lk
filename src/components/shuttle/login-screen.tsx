@@ -87,10 +87,15 @@ export default function LoginScreen() {
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
             className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl mx-auto mb-4 flex items-center justify-center"
           >
-            <Bus className="w-10 h-10 text-white" />
+            <motion.div
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <Bus className="w-10 h-10 text-white" />
+            </motion.div>
           </motion.div>
           <h1 className="text-3xl font-bold text-white">ShuttleLK</h1>
-          <p className="text-emerald-100 mt-1">Sri Lanka&apos;s Shuttle Management</p>
+          <p className="text-emerald-100 mt-1 text-sm font-medium">Smart Shuttle Management for Sri Lanka</p>
         </div>
 
         {/* Login Card */}
@@ -193,19 +198,33 @@ export default function LoginScreen() {
           transition={{ delay: 0.5 }}
           className="mt-6"
         >
-          <p className="text-center text-emerald-100 text-sm mb-3">Demo Accounts</p>
+          <p className="text-center text-emerald-100 text-sm mb-3 font-medium">⚡ Quick Login</p>
           <div className="space-y-2">
-            {DEMO_ACCOUNTS.map((account) => (
-              <motion.button
-                key={account.role}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => fillDemo(account)}
-                className="w-full bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2.5 flex items-center justify-between text-white hover:bg-white/20 transition-colors"
-              >
-                <span className="text-sm font-medium">{account.label}</span>
-                <span className="text-xs text-emerald-100">{account.phone}</span>
-              </motion.button>
-            ))}
+            {DEMO_ACCOUNTS.map((account) => {
+              const roleColors: Record<string, string> = {
+                OWNER: 'from-amber-500/40 to-amber-600/30 border-amber-400/40',
+                DRIVER: 'from-emerald-500/40 to-emerald-600/30 border-emerald-400/40',
+                STUDENT: 'from-teal-500/40 to-teal-600/30 border-teal-400/40',
+              }
+              const roleIcons: Record<string, React.ReactNode> = {
+                OWNER: <Crown className="w-4 h-4 text-amber-200" />,
+                DRIVER: <Gauge className="w-4 h-4 text-emerald-200" />,
+                STUDENT: <GraduationCap className="w-4 h-4 text-teal-200" />,
+              }
+              return (
+                <motion.button
+                  key={account.role}
+                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.02 }}
+                  onClick={() => fillDemo(account)}
+                  className={`w-full bg-gradient-to-r ${roleColors[account.role]} backdrop-blur-sm rounded-xl px-4 py-3 flex items-center gap-3 border text-white hover:brightness-110 transition-all`}
+                >
+                  {roleIcons[account.role]}
+                  <span className="text-sm font-semibold flex-1 text-left">{account.label}</span>
+                  <span className="text-xs opacity-80">{account.phone}</span>
+                </motion.button>
+              )
+            })}
           </div>
         </motion.div>
       </motion.div>

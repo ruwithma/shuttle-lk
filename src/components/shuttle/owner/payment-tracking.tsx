@@ -114,8 +114,9 @@ export default function PaymentTracking() {
     return true
   })
 
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
   const todayTotal = payments
-    .filter((p) => p.date === format(new Date(), 'yyyy-MM-dd'))
+    .filter((p) => format(new Date(p.date), 'yyyy-MM-dd') === todayStr)
     .reduce((sum, p) => sum + p.amount, 0)
 
   const monthTotal = payments

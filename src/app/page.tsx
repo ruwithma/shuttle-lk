@@ -17,6 +17,7 @@ import MyRoute from '@/components/shuttle/student/my-route'
 import StudentPaymentHistory from '@/components/shuttle/student/payment-history'
 import NotificationPanel from '@/components/shuttle/shared/notification-panel'
 import ExpenseTracking from '@/components/shuttle/owner/expense-tracking'
+import FleetTracking from '@/components/shuttle/owner/fleet-tracking'
 
 export default function Home() {
   const { currentUser, activeTab } = useAppStore()
@@ -37,6 +38,8 @@ export default function Home() {
           return <PaymentTracking />
         case 'expenses':
           return <ExpenseTracking />
+        case 'fleet-tracking':
+          return <FleetTracking />
         case 'notifications':
           return <NotificationPanel />
         case 'more':

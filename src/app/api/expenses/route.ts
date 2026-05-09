@@ -47,7 +47,7 @@ export async function GET(request: Request) {
     // Return flat array for frontend compatibility
     return NextResponse.json(expenses, { status: 200 })
   } catch (error) {
-    console.error('Get expenses error:', error)
+    if (process.env.NODE_ENV === 'development') console.error('Get expenses error:', error)
     return NextResponse.json({ error: 'Failed to fetch expenses' }, { status: 500 })
   }
 }
@@ -109,7 +109,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(expense, { status: 201 })
   } catch (error) {
-    console.error('Create expense error:', error)
+    if (process.env.NODE_ENV === 'development') console.error('Create expense error:', error)
     return NextResponse.json({ error: 'Failed to create expense' }, { status: 500 })
   }
 }

@@ -27,7 +27,7 @@ import { toast } from '@/hooks/use-toast'
 import type { Bus } from '@/lib/types'
 
 export default function BusManagement() {
-  const { currentUser, buses, setBuses } = useAppStore()
+  const { currentUser, buses, setBuses, busLocations } = useAppStore()
   const [loading, setLoading] = useState(true)
   const [showDialog, setShowDialog] = useState(false)
   const [editingBus, setEditingBus] = useState<Bus | null>(null)
@@ -190,6 +190,28 @@ export default function BusManagement() {
                       </div>
                     </div>
 
+                    {/* Route Preview */}
+                    {bus.routeName && (
+                      <div className="mt-3 bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <MapPin className="w-3 h-3 text-emerald-500" />
+                          <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Route Preview</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex flex-col items-center">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                            <div className="w-0.5 h-6 bg-gray-300 dark:bg-gray-600" />
+                            <div className="w-2 h-2 bg-red-500 rounded-full" />
+                          </div>
+                          <div className="flex flex-col gap-3">
+                            <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{bus.routeStart || 'Start'}</span>
+                            <span className="text-[10px] text-muted-foreground">{bus.routeName}</span>
+                            <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{bus.routeEnd || 'End'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="mt-2 flex items-center gap-2">
                       <Badge variant="secondary" className="text-[10px]">
                         {bus.driver?.name || 'No driver assigned'}
@@ -197,6 +219,19 @@ export default function BusManagement() {
                       <Badge className={`text-[10px] ${bus.active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
                         {bus.active ? 'Active' : 'Inactive'}
                       </Badge>
+                      {bus.id && busLocations[bus.id]?.isLive ? (
+                        <Badge className="text-[10px] bg-emerald-100 text-emerald-700 flex items-center gap-1">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                          </span>
+                          Live
+                        </Badge>
+                      ) : (
+                        <Badge className="text-[10px] bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                          Offline
+                        </Badge>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
