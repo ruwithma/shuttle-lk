@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import BusMap from '@/components/shuttle/shared/bus-map'
+import ShuttleMap from '@/components/shuttle/shared/shuttle-map-wrapper'
 import { useSharedSocket } from '@/components/shuttle/shared/socket-provider'
 import { formatLKR } from '@/lib/utils'
 
@@ -95,10 +95,6 @@ export default function ShuttleFinder() {
       })
     })
 
-    socket.on('live-bus-started', (data: { busId: string; busName: string; routeName: string; plateNumber: string; timestamp: number }) => {
-      // Will get full data from next update
-    })
-
     socket.on('live-bus-stopped', (data: { busId: string }) => {
       setLiveBusesFromSocket(prev => {
         const next = new Map(prev)
@@ -111,7 +107,6 @@ export default function ShuttleFinder() {
       socket.off('connect', onConnect)
       socket.off('all-live-buses')
       socket.off('live-bus-update')
-      socket.off('live-bus-started')
       socket.off('live-bus-stopped')
       socket.emit('unsubscribe-all-live')
     }
@@ -171,7 +166,7 @@ export default function ShuttleFinder() {
     )
   }, [query, fetchShuttles])
 
-  // Build fleet buses for live map view (combining static shuttle data with live positions)
+  // Build fleet buses for live map view
   const liveFleetBuses = useMemo(() => {
     const buses: Array<{
       busId: string
@@ -185,7 +180,6 @@ export default function ShuttleFinder() {
       color: string
     }> = []
 
-    // Merge live WebSocket data with static shuttle data
     for (const shuttle of shuttles) {
       const liveData = liveBusesFromSocket.get(shuttle.id)
       if (liveData) {
@@ -221,7 +215,13 @@ export default function ShuttleFinder() {
     if (!selectedShuttle) return []
     try {
       const coords = JSON.parse(selectedShuttle.routeCoordinates || '[]')
-      if (Array.isArray(coords)) return coords
+      if (Array.isArray(coords)) {
+        // Handle both [lat, lng] and [lng, lat] formats
+        return coords.map((c: [number, number]) => {
+          if (c[0] > 90) return [c[1], c[0]] as [number, number] // [lng, lat] -> [lat, lng]
+          return [c[0], c[1]] as [number, number]
+        })
+      }
     } catch {}
     return []
   }, [selectedShuttle])
@@ -233,7 +233,12 @@ export default function ShuttleFinder() {
       if (typeof stopCoords === 'object') {
         return Object.entries(stopCoords).map(([name, coord]) => {
           const c = coord as [number, number]
-          return { name, lat: c[0], lng: c[1] }
+          const isLngFirst = c[0] > 90
+          return {
+            name,
+            lat: isLngFirst ? c[1] : c[0],
+            lng: isLngFirst ? c[0] : c[1],
+          }
         })
       }
     } catch {}
@@ -269,9 +274,9 @@ export default function ShuttleFinder() {
   }, [selectedShuttle, liveBusesFromSocket])
 
   const getOccupancyColor = (pct: number) => {
-    if (pct >= 90) return 'text-red-600 bg-red-50'
-    if (pct >= 70) return 'text-amber-600 bg-amber-50'
-    return 'text-emerald-600 bg-emerald-50'
+    if (pct >= 90) return 'text-red-600 bg-red-50 dark:bg-red-900/30'
+    if (pct >= 70) return 'text-amber-600 bg-amber-50 dark:bg-amber-900/30'
+    return 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30'
   }
 
   const liveBusCount = liveBusesFromSocket.size
@@ -279,11 +284,11 @@ export default function ShuttleFinder() {
   if (loading) {
     return (
       <div className="p-4 space-y-4">
-        <div className="h-12 bg-gray-100 rounded-2xl animate-pulse" />
+        <div className="h-12 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
         <div className="grid grid-cols-3 gap-2">
-          {[1, 2, 3].map(i => <div key={i} className="h-8 bg-gray-100 rounded-lg animate-pulse" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-8 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />)}
         </div>
-        {[1, 2, 3].map(i => <div key={i} className="h-28 bg-gray-100 rounded-2xl animate-pulse" />)}
+        {[1, 2, 3].map(i => <div key={i} className="h-28 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />)}
       </div>
     )
   }
@@ -294,11 +299,11 @@ export default function ShuttleFinder() {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Find Shuttles</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Find Shuttles</h2>
             <p className="text-sm text-muted-foreground">Discover routes near you</p>
           </div>
           {liveBusCount > 0 && (
-            <Badge className="bg-emerald-50 text-emerald-700 text-[10px] flex items-center gap-1.5 px-2.5 py-1">
+            <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 text-[10px] flex items-center gap-1.5 px-2.5 py-1">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
@@ -319,7 +324,7 @@ export default function ShuttleFinder() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="pl-10 h-11 rounded-xl bg-white border-gray-200"
+              className="pl-10 h-11 rounded-xl bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
             />
             {query && (
               <button
@@ -353,7 +358,7 @@ export default function ShuttleFinder() {
             className={`w-full rounded-xl h-10 text-sm font-semibold ${
               showLiveMap
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/30'
             }`}
           >
             <Radio className="w-4 h-4 mr-2" />
@@ -371,9 +376,9 @@ export default function ShuttleFinder() {
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <Card className="rounded-2xl border-0 shadow-sm overflow-hidden">
+            <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900 overflow-hidden">
               <div style={{ height: 280 }}>
-                <BusMap
+                <ShuttleMap
                   fleetBuses={liveFleetBuses}
                   center={[7.0, 79.9]}
                   zoom={10}
@@ -398,7 +403,7 @@ export default function ShuttleFinder() {
               <button
                 key={area}
                 onClick={() => { setQuery(area); fetchShuttles(area) }}
-                className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+                className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:border-emerald-600 dark:hover:text-emerald-400 dark:hover:bg-emerald-900/30 transition-colors"
               >
                 {area}
               </button>
@@ -417,9 +422,9 @@ export default function ShuttleFinder() {
             className="overflow-hidden"
           >
             {/* Map */}
-            <Card className="rounded-2xl border-0 shadow-sm overflow-hidden mb-4">
+            <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900 overflow-hidden mb-4">
               <div style={{ height: 280 }}>
-                <BusMap
+                <ShuttleMap
                   routePath={selectedRoutePath}
                   stops={selectedStops}
                   fleetBuses={selectedLiveBuses}
@@ -432,15 +437,15 @@ export default function ShuttleFinder() {
             </Card>
 
             {/* Shuttle Detail Card */}
-            <Card className="rounded-2xl border-0 shadow-sm mb-4">
+            <Card className="rounded-2xl border-0 shadow-sm dark:bg-gray-900 mb-4">
               <CardContent className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/50 rounded-xl flex items-center justify-center">
                       <BusIcon className="w-6 h-6 text-emerald-600" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900">{selectedShuttle.name}</h3>
+                      <h3 className="font-bold text-gray-900 dark:text-gray-100">{selectedShuttle.name}</h3>
                       <p className="text-xs text-muted-foreground">{selectedShuttle.plateNumber}</p>
                     </div>
                   </div>
@@ -455,20 +460,20 @@ export default function ShuttleFinder() {
                 </div>
 
                 {/* Route Info */}
-                <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-3">
+                <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
                   <div className="flex flex-col items-center">
                     <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />
-                    <div className="w-0.5 h-8 bg-gray-300" />
+                    <div className="w-0.5 h-8 bg-gray-300 dark:bg-gray-600" />
                     <div className="w-2.5 h-2.5 bg-red-500 rounded-full" />
                   </div>
                   <div className="flex flex-col gap-4">
                     <div>
                       <p className="text-xs text-muted-foreground">From</p>
-                      <p className="text-sm font-semibold">{selectedShuttle.routeStart}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{selectedShuttle.routeStart}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">To</p>
-                      <p className="text-sm font-semibold">{selectedShuttle.routeEnd}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{selectedShuttle.routeEnd}</p>
                     </div>
                   </div>
                 </div>
@@ -479,7 +484,7 @@ export default function ShuttleFinder() {
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Route Stops</p>
                     <div className="flex flex-wrap gap-1.5">
                       {selectedShuttle.stops.map((stop, i) => (
-                        <span key={i} className="px-2 py-1 bg-gray-100 rounded-md text-xs font-medium text-gray-600">
+                        <span key={i} className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md text-xs font-medium text-gray-600 dark:text-gray-400">
                           {stop}
                         </span>
                       ))}
@@ -489,9 +494,9 @@ export default function ShuttleFinder() {
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-gray-50 rounded-xl p-2.5 text-center">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-2.5 text-center">
                     <Users className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
-                    <p className="text-sm font-bold text-gray-900">{selectedShuttle.seatsAvailable}</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{selectedShuttle.seatsAvailable}</p>
                     <p className="text-[10px] text-muted-foreground">Seats Left</p>
                   </div>
                   <div className={`rounded-xl p-2.5 text-center ${getOccupancyColor(selectedShuttle.occupancyPercent)}`}>
@@ -499,11 +504,11 @@ export default function ShuttleFinder() {
                     <p className="text-sm font-bold">{selectedShuttle.occupancyPercent}%</p>
                     <p className="text-[10px]">Full</p>
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-2.5 text-center">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-2.5 text-center">
                     {selectedShuttle.isLive || liveBusesFromSocket.has(selectedShuttle.id) ? (
                       <>
                         <Wifi className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
-                        <p className="text-sm font-bold text-emerald-600">Live</p>
+                        <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Live</p>
                       </>
                     ) : (
                       <>
@@ -521,9 +526,9 @@ export default function ShuttleFinder() {
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Pricing</p>
                     <div className="flex gap-2">
                       {selectedShuttle.priceRange.daily && (
-                        <div className="flex-1 bg-amber-50 rounded-xl p-3 text-center">
-                          <p className="text-[10px] text-amber-600 font-semibold uppercase">Daily</p>
-                          <p className="text-sm font-bold text-amber-800">
+                        <div className="flex-1 bg-amber-50 dark:bg-amber-900/30 rounded-xl p-3 text-center">
+                          <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold uppercase">Daily</p>
+                          <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
                             Rs. {selectedShuttle.priceRange.daily.min}
                             {selectedShuttle.priceRange.daily.min !== selectedShuttle.priceRange.daily.max &&
                               ` - ${selectedShuttle.priceRange.daily.max}`}
@@ -531,9 +536,9 @@ export default function ShuttleFinder() {
                         </div>
                       )}
                       {selectedShuttle.priceRange.monthly && (
-                        <div className="flex-1 bg-emerald-50 rounded-xl p-3 text-center">
-                          <p className="text-[10px] text-emerald-600 font-semibold uppercase">Monthly</p>
-                          <p className="text-sm font-bold text-emerald-800">
+                        <div className="flex-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl p-3 text-center">
+                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase">Monthly</p>
+                          <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
                             Rs. {selectedShuttle.priceRange.monthly.min}
                             {selectedShuttle.priceRange.monthly.min !== selectedShuttle.priceRange.monthly.max &&
                               ` - ${selectedShuttle.priceRange.monthly.max}`}
@@ -546,14 +551,14 @@ export default function ShuttleFinder() {
 
                 {/* Driver Info */}
                 {selectedShuttle.driver && (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                    <div className="w-9 h-9 bg-amber-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-bold text-amber-700">
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                    <div className="w-9 h-9 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-bold text-amber-700 dark:text-amber-300">
                         {selectedShuttle.driver.name.charAt(0)}
                       </span>
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{selectedShuttle.driver.name}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{selectedShuttle.driver.name}</p>
                       <p className="text-xs text-muted-foreground">{selectedShuttle.driver.phone}</p>
                     </div>
                   </div>
@@ -591,23 +596,23 @@ export default function ShuttleFinder() {
                     transition={{ delay: index * 0.05 }}
                   >
                     <Card
-                      className={`rounded-2xl border-0 shadow-sm cursor-pointer hover:shadow-md transition-all ${
-                        isActuallyLive ? 'ring-1 ring-emerald-200' : ''
+                      className={`rounded-2xl border-0 shadow-sm cursor-pointer hover:shadow-md transition-all dark:bg-gray-900 ${
+                        isActuallyLive ? 'ring-1 ring-emerald-200 dark:ring-emerald-800' : ''
                       }`}
                       onClick={() => setSelectedShuttle(shuttle)}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
                           <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                            isActuallyLive ? 'bg-emerald-100' : 'bg-gray-50'
+                            isActuallyLive ? 'bg-emerald-100 dark:bg-emerald-900/50' : 'bg-gray-50 dark:bg-gray-800'
                           }`}>
                             <BusIcon className={`w-5 h-5 ${isActuallyLive ? 'text-emerald-600' : 'text-gray-400'}`} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-gray-900 text-sm truncate">{shuttle.name}</h3>
+                              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">{shuttle.name}</h3>
                               {isActuallyLive && (
-                                <Badge className="text-[9px] px-1.5 py-0 bg-emerald-100 text-emerald-700 flex items-center gap-1">
+                                <Badge className="text-[9px] px-1.5 py-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 flex items-center gap-1">
                                   <span className="relative flex h-1.5 w-1.5">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
@@ -627,7 +632,7 @@ export default function ShuttleFinder() {
                             <div className="flex items-center gap-3 mt-2">
                               <div className="flex items-center gap-1">
                                 <Users className="w-3 h-3 text-gray-400" />
-                                <span className="text-[10px] font-medium text-gray-500">
+                                <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
                                   {shuttle.seatsAvailable} seats
                                 </span>
                               </div>
@@ -635,18 +640,18 @@ export default function ShuttleFinder() {
                                 {shuttle.occupancyPercent}% full
                               </div>
                               {shuttle.priceRange.daily && (
-                                <span className="text-[10px] font-medium text-amber-600">
+                                <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
                                   Rs. {shuttle.priceRange.daily.min}/day
                                 </span>
                               )}
                               {shuttle.priceRange.monthly && !shuttle.priceRange.daily && (
-                                <span className="text-[10px] font-medium text-emerald-600">
+                                <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
                                   Rs. {shuttle.priceRange.monthly.min}/mo
                                 </span>
                               )}
                             </div>
                           </div>
-                          <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0 mt-1" />
+                          <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0 mt-1" />
                         </div>
                       </CardContent>
                     </Card>
@@ -656,7 +661,7 @@ export default function ShuttleFinder() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <BusIcon className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+              <BusIcon className="w-12 h-12 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">No shuttles found</p>
               <p className="text-xs text-muted-foreground mt-1">Try a different search or area</p>
             </div>

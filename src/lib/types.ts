@@ -32,6 +32,27 @@ export interface Bus {
   driver?: User
 }
 
+export interface RouteStop {
+  name: string
+  lat: number
+  lng: number
+  order: number
+  estimatedMinutes?: number // minutes from start
+}
+
+export interface BusRoute {
+  id: string
+  busId: string
+  name: string
+  direction: string
+  coordinates: [number, number][] // [lng, lat] pairs (MapLibre order)
+  stops: RouteStop[]
+  totalDistance?: number
+  estimatedDuration?: number
+  isActive: boolean
+  recordedAt: string
+}
+
 export interface Subscription {
   id: string
   studentId: string

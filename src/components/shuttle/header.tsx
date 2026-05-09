@@ -1,7 +1,8 @@
 'use client'
 
-import { Bell, LogOut } from 'lucide-react'
+import { Bell, LogOut, Moon, Sun } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTheme } from 'next-themes'
 import { useAppStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -15,13 +16,14 @@ import {
 import type { UserRole } from '@/lib/types'
 
 const roleConfig: Record<UserRole, { label: string; className: string }> = {
-  OWNER: { label: 'Owner', className: 'bg-amber-100 text-amber-700 border-amber-200' },
-  DRIVER: { label: 'Driver', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-  STUDENT: { label: 'Student', className: 'bg-teal-100 text-teal-700 border-teal-200' },
+  OWNER: { label: 'Owner', className: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-700' },
+  DRIVER: { label: 'Driver', className: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-700' },
+  STUDENT: { label: 'Student', className: 'bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-900/50 dark:text-teal-300 dark:border-teal-700' },
 }
 
 export default function Header() {
   const { currentUser, notifications, setActiveTab, logout, isDriverLive } = useAppStore()
+  const { theme, setTheme } = useTheme()
   if (!currentUser) return null
 
   const unreadCount = notifications.filter((n) => !n.read).length
@@ -36,7 +38,7 @@ export default function Header() {
   const roleInfo = roleConfig[role]
 
   return (
-    <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+    <header className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-lg mx-auto flex items-center justify-between px-4 h-14">
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -63,7 +65,40 @@ export default function Header() {
           <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">ShuttleLK</h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          {/* Dark mode toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          >
+            <AnimatePresence mode="wait">
+              {theme === 'dark' ? (
+                <motion.div
+                  key="sun"
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Sun className="w-4.5 h-4.5 text-amber-400" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="moon"
+                  initial={{ rotate: 90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Moon className="w-4.5 h-4.5 text-gray-600" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Button>
+
+          {/* Notifications */}
           <Button
             variant="ghost"
             size="icon"
@@ -83,20 +118,13 @@ export default function Header() {
                 </motion.span>
               )}
             </AnimatePresence>
-            {unreadCount > 0 && (
-              <motion.span
-                className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500"
-                animate={{ scale: [1, 2], opacity: [0.5, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
-              />
-            )}
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar className="w-8 h-8">
-                  <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                  <AvatarFallback className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 text-xs font-semibold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>

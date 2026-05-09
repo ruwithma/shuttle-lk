@@ -53,6 +53,7 @@ model Bus {
   payments     Payment[]
   expenses     Expense[]
   locations    BusLocation[]
+  routes       Route[]
 }
 
 model Subscription {
@@ -129,4 +130,21 @@ model Notification {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model Route {
+  id                String   @id @default(cuid())
+  busId             String
+  name              String
+  direction         String   @default("forward") // forward, return
+  coordinates       String   // JSON array of [lng, lat] points (MapLibre order)
+  stops             String   // JSON array of {name, lat, lng, order, estimatedMinutes}
+  totalDistance      Float?   // in meters
+  estimatedDuration Int?     // in minutes
+  isActive          Boolean  @default(true)
+  recordedAt        DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  bus Bus @relation(fields: [busId], references: [id], onDelete: Cascade)
 }

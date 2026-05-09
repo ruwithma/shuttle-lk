@@ -29,8 +29,9 @@ const TABS: TabConfig[] = [
   { id: 'students', label: 'Students', icon: Users, roles: ['OWNER'] },
   { id: 'payments', label: 'Payments', icon: CreditCard, roles: ['OWNER', 'STUDENT'] },
   { id: 'collect', label: 'Collect', icon: HandCoins, roles: ['DRIVER'] },
+  { id: 'record-route', label: 'Route', icon: Route, roles: ['DRIVER'] },
   { id: 'driver-history', label: 'History', icon: History, roles: ['DRIVER'] },
-  { id: 'route', label: 'Route', icon: Route, roles: ['STUDENT'] },
+  { id: 'route', label: 'Track', icon: Route, roles: ['STUDENT'] },
   { id: 'more', label: 'More', icon: MoreHorizontal, roles: ['OWNER', 'DRIVER', 'STUDENT'] },
 ]
 
@@ -43,7 +44,7 @@ export default function BottomNav() {
   const unreadCount = notifications.filter((n) => !n.read).length
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 z-50 safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700 z-50 safe-area-bottom">
       <div className="max-w-lg mx-auto flex items-center justify-around">
         {visibleTabs.map((tab) => {
           const isActive = activeTab === tab.id
@@ -60,13 +61,13 @@ export default function BottomNav() {
                 {isActive && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute -inset-1.5 bg-emerald-100 rounded-lg"
+                    className="absolute -inset-1.5 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg"
                     transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                   />
                 )}
                 <Icon
                   className={`w-5 h-5 relative z-10 transition-colors ${
-                    isActive ? 'text-emerald-600' : 'text-gray-400'
+                    isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'
                   }`}
                 />
                 {showBadge && (
@@ -77,7 +78,7 @@ export default function BottomNav() {
               </div>
               <span
                 className={`text-[10px] mt-0.5 font-medium transition-colors ${
-                  isActive ? 'text-emerald-600' : 'text-gray-400'
+                  isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'
                 }`}
               >
                 {tab.label}

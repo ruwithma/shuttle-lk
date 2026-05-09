@@ -11,12 +11,12 @@ import { SocketProvider } from '@/components/shuttle/shared/socket-provider'
 function ViewSkeleton() {
   return (
     <div className="p-4 space-y-4">
-      <div className="h-8 bg-gray-100 rounded-lg animate-pulse w-48" />
+      <div className="h-8 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse w-48" />
       <div className="grid grid-cols-2 gap-3">
-        <div className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
-        <div className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
+        <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
+        <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
       </div>
-      <div className="h-48 bg-gray-100 rounded-2xl animate-pulse" />
+      <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
     </div>
   )
 }
@@ -32,6 +32,7 @@ const FleetTracking = dynamic(() => import('@/components/shuttle/owner/fleet-tra
 const DriverDashboard = dynamic(() => import('@/components/shuttle/driver/dashboard'), { loading: () => <ViewSkeleton /> })
 const CollectPayment = dynamic(() => import('@/components/shuttle/driver/collect-payment'), { loading: () => <ViewSkeleton /> })
 const DriverHistory = dynamic(() => import('@/components/shuttle/driver/driver-history'), { loading: () => <ViewSkeleton /> })
+const RouteRecorder = dynamic(() => import('@/components/shuttle/driver/route-recorder'), { loading: () => <ViewSkeleton /> })
 const StudentDashboard = dynamic(() => import('@/components/shuttle/student/dashboard'), { loading: () => <ViewSkeleton /> })
 const MyRoute = dynamic(() => import('@/components/shuttle/student/my-route'), { loading: () => <ViewSkeleton /> })
 const StudentPaymentHistory = dynamic(() => import('@/components/shuttle/student/payment-history'), { loading: () => <ViewSkeleton /> })
@@ -67,6 +68,7 @@ function AppContent() {
       switch (activeTab) {
         case 'dashboard': return <DriverDashboard />
         case 'collect': return <CollectPayment />
+        case 'record-route': return <RouteRecorder />
         case 'driver-history': return <DriverHistory />
         case 'more': return <NotificationPanel />
         default: return <DriverDashboard />
@@ -88,7 +90,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
       <Header />
       <main className="flex-1 overflow-y-auto pb-20 max-w-lg mx-auto w-full">
         {renderContent()}

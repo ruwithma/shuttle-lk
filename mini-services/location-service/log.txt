@@ -106,3 +106,36 @@ Received SIGINT signal, shutting down server...
 Location tracking server closed
 $ bun --hot index.ts
 🚌 Location tracking WebSocket server running on port 3003
+[connection] socket=AMtrP-UnA_JjnJmZAAAB
+[connection] socket=FWES8rbi0xYDSQgdAAAD
+[subscribe-owner] socket=FWES8rbi0xYDSQgdAAAD joined owner:cmoydogg10000mgfaaukv79uo
+[connection] socket=IGGbdyN9rVBf6lF_AAAF
+[disconnect] socket=AMtrP-UnA_JjnJmZAAAB (reason: transport close)
+[unsubscribe-owner] socket=FWES8rbi0xYDSQgdAAAD left owner:cmoydogg10000mgfaaukv79uo
+[subscribe-bus] socket=FWES8rbi0xYDSQgdAAAD joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=FWES8rbi0xYDSQgdAAAD left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-bus] socket=FWES8rbi0xYDSQgdAAAD joined bus:cmoydoggf000gmgfadtofe0bq
+[unsubscribe-bus] socket=FWES8rbi0xYDSQgdAAAD left bus:cmoydoggf000gmgfadtofe0bq
+[subscribe-all-live] socket=FWES8rbi0xYDSQgdAAAD joined all-live
+[unsubscribe-all-live] socket=FWES8rbi0xYDSQgdAAAD left all-live
+[subscribe-owner] socket=FWES8rbi0xYDSQgdAAAD joined owner:cmoydogg10000mgfaaukv79uo
+[unsubscribe-owner] socket=FWES8rbi0xYDSQgdAAAD left owner:cmoydogg10000mgfaaukv79uo
+[driver-start] socket=FWES8rbi0xYDSQgdAAAD bus=cmoydoggf000gmgfadtofe0bq driver=Nimal Silva busName=Kadawatha Route owner=cmoydogg10000mgfaaukv79uo
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=37.751 lng=-97.822 speed=- heading=-
+[driver-location] bus=cmoydoggf000gmgfadtofe0bq lat=37.751 lng=-97.822 speed=- heading=-
+[disconnect] socket=FWES8rbi0xYDSQgdAAAD was driver of bus=cmoydoggf000gmgfadtofe0bq, removed from live map (reason: client namespace disconnect)
+[disconnect] socket=IGGbdyN9rVBf6lF_AAAF (reason: transport close)
+[connection] socket=3JjHnBmk3RbPlRDJAAAH
+[connection] socket=HFRzigpSIckFJl4DAAAJ
+[connection] socket=rKZYFpPNCyjLca59AAAL
+[disconnect] socket=3JjHnBmk3RbPlRDJAAAH (reason: transport close)
+[connection] socket=GmV4tLtNd60bCJqtAAAN
+[disconnect] socket=HFRzigpSIckFJl4DAAAJ (reason: transport close)
+[disconnect] socket=GmV4tLtNd60bCJqtAAAN (reason: transport close)
+[connection] socket=qqwSSYzdYPnslrEWAAAP
+[connection] socket=RT5DmSHNU4BPfDO4AAAR
+[disconnect] socket=rKZYFpPNCyjLca59AAAL (reason: transport close)
+[disconnect] socket=qqwSSYzdYPnslrEWAAAP (reason: transport close)
+[connection] socket=0W4snchN4dg-DKk0AAAT
+[subscribe-owner] socket=RT5DmSHNU4BPfDO4AAAR joined owner:cmoydogg10000mgfaaukv79uo
+[unsubscribe-owner] socket=RT5DmSHNU4BPfDO4AAAR left owner:cmoydogg10000mgfaaukv79uo

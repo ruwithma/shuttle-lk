@@ -2,14 +2,17 @@
 
 import dynamic from 'next/dynamic'
 
-const BusMapInner = dynamic(() => import('./bus-map-inner'), {
+const ShuttleMapInner = dynamic(() => import('./shuttle-map'), {
   ssr: false,
   loading: () => (
-    <div className="h-full w-full bg-gray-100 rounded-2xl animate-pulse flex items-center justify-center" style={{ minHeight: 250 }}>
+    <div className="h-full w-full bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse flex items-center justify-center" style={{ minHeight: 250 }}>
       <span className="text-sm text-muted-foreground">Loading map...</span>
     </div>
   ),
 })
+
+// Re-export the StopInfo type
+export type { StopInfo } from './shuttle-map'
 
 interface FleetBus {
   busId: string
@@ -25,12 +28,12 @@ interface FleetBus {
   color?: string
 }
 
-interface BusMapProps {
+interface ShuttleMapProps {
   center?: [number, number]
   zoom?: number
   routePath?: [number, number][]
   busLocation?: { lat: number; lng: number; heading?: number; speed?: number }
-  stops?: { name: string; lat: number; lng: number }[]
+  stops?: { name: string; lat: number; lng: number; estimatedMinutes?: number }[]
   trail?: { lat: number; lng: number }[]
   showLiveBus?: boolean
   className?: string
@@ -41,8 +44,9 @@ interface BusMapProps {
   eta?: string | null
   followBus?: boolean
   showZoomControl?: boolean
+  darkMode?: boolean
 }
 
-export default function BusMap(props: BusMapProps) {
-  return <BusMapInner {...props} />
+export default function ShuttleMap(props: ShuttleMapProps) {
+  return <ShuttleMapInner {...props} />
 }
