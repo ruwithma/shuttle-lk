@@ -486,7 +486,7 @@ export default function MyRoute() {
               ) : (
                 <>
                   <div className="w-3 h-3 bg-gray-400 rounded-full" />
-                  <WifiOff className="w-4 h-4 text-gray-400" />
+                  <WifiOff className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">Bus is offline</p>
                     <p className="text-xs text-muted-foreground">

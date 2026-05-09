@@ -28,3 +28,45 @@ Stage Summary:
 - App is fully functional with clean code
 - Both services running: Next.js on port 3000, Location WebSocket on port 3003
 - Database seeded with demo data including OSRM road-following routes
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix all remaining map issues - theme switch, marker management, fleet visibility, dark mode
+
+Work Log:
+- Complete rewrite of shuttle-map.tsx with critical fixes:
+  - FIXED: Map style change (dark/light toggle) now properly restores ALL layers/sources/markers after setStyle()
+  - FIXED: Stop markers no longer clear ALL markers (bus, fleet) - now uses tracked marker system with type-based removal
+  - FIXED: Map bounds fitting now uses fingerprint comparison instead of hasFittedRef, allowing re-fit when fleet buses appear
+  - FIXED: Fleet markers are individually tracked by busId for proper updates
+  - FIXED: Bus marker uses key-based tracking ('bus-main') for reliable management
+  - Added TrackedMarker system with type ('stop'|'bus-main'|'fleet') and key for granular marker management
+  - Moved GeoJSON building logic inline into useMemo to satisfy React Compiler
+- Fixed fleet-tracking.tsx:
+  - Properly handles routeStopCoordinates stored as object format (not just array)
+  - Improved selectedBusLocation to filter out 0,0 coordinates
+  - Better error handling for missing bus names
+  - Fixed dark mode contrast for offline label and MapPin icon
+- Fixed bus-location-hook.ts:
+  - useFleetLocations now includes ALL buses from initial fetch (even with 0,0 coords) - they get valid coords via WebSocket
+  - handleBusLocation preserves existing speed/heading when update doesn't include them
+- Fixed dark mode text contrast across 11 component files:
+  - Notification panel icons (amber-600→amber-400, blue-600→blue-400)
+  - Header moon icon and logout text
+  - Driver collect-payment and dashboard amber icons
+  - Fleet tracking offline labels and map pin icons
+  - Stat card default icon colors and trend text
+  - Shuttle finder occupancy colors and various icons
+  - Route recorder action buttons
+  - Student my-route WifiOff icon
+  - Owner more and reports chevron/icons
+- All changes pass ESLint (only spawner.js pre-existing errors remain)
+- Both services running and verified
+
+Stage Summary:
+- Map now survives dark/light theme toggles without losing routes, markers, or fleet buses
+- Fleet tracking properly shows all buses on the map with correct markers
+- Stop markers no longer accidentally remove bus/fleet markers
+- Dark mode text contrast significantly improved across all views
+- Marker management is now type-safe and granular

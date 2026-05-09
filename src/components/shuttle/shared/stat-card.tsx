@@ -21,8 +21,8 @@ export default function StatCard({
   title,
   value,
   icon: Icon,
-  iconColor = 'text-emerald-600',
-  iconBg = 'bg-emerald-50',
+  iconColor = 'text-emerald-600 dark:text-emerald-400',
+  iconBg = 'bg-emerald-50 dark:bg-emerald-900/50',
   trend,
   className,
 }: StatCardProps) {
@@ -37,7 +37,7 @@ export default function StatCard({
               <p
                 className={cn(
                   'text-xs font-medium',
-                  trend.positive ? 'text-emerald-600' : 'text-red-500'
+                  trend.positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'
                 )}
               >
                 {trend.positive ? '+' : ''}{trend.value}%

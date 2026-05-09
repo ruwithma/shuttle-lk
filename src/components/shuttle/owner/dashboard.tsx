@@ -106,28 +106,28 @@ export default function OwnerDashboard() {
           title="Total Students"
           value={stats.totalStudents}
           icon={Users}
-          iconColor="text-emerald-600"
+          iconColor="text-emerald-600 dark:text-emerald-400"
           iconBg="bg-emerald-50 dark:bg-emerald-900/50"
         />
         <StatCard
           title="Monthly Income"
           value={formatLKR(stats.monthlyIncome)}
           icon={TrendingUp}
-          iconColor="text-green-600"
+          iconColor="text-green-600 dark:text-green-400"
           iconBg="bg-green-50 dark:bg-green-900/50"
         />
         <StatCard
           title="Total Expenses"
           value={formatLKR(stats.totalExpenses)}
           icon={TrendingDown}
-          iconColor="text-red-600"
+          iconColor="text-red-600 dark:text-red-400"
           iconBg="bg-red-50 dark:bg-red-900/50"
         />
         <StatCard
           title="Net Profit"
           value={formatLKR(stats.netProfit)}
           icon={DollarSign}
-          iconColor={stats.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}
+          iconColor={stats.netProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}
           iconBg={stats.netProfit >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/50' : 'bg-red-50 dark:bg-red-900/50'}
         />
       </motion.div>

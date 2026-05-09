@@ -52,7 +52,6 @@ const DEFAULT_ZOOM = 8
 
 // ─── Minimal Uber-like Map Styles ────────────────────────────────────────────
 
-// Light style - clean, minimal like Uber
 const LIGHT_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
@@ -84,7 +83,6 @@ const LIGHT_STYLE: maplibregl.StyleSpecification = {
   ],
 }
 
-// Dark style - sleek dark mode like Uber night
 const DARK_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
@@ -111,6 +109,16 @@ const DARK_STYLE: maplibregl.StyleSpecification = {
   ],
 }
 
+// ─── Marker Tracking Types ───────────────────────────────────────────────────
+
+type MarkerType = 'stop' | 'bus-main' | 'fleet'
+
+interface TrackedMarker {
+  marker: maplibregl.Marker
+  type: MarkerType
+  key: string // unique identifier for the marker
+}
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function ShuttleMap({
@@ -135,83 +143,140 @@ export default function ShuttleMap({
   const isDark = darkModeProp ?? resolvedTheme === 'dark'
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
-  const markersRef = useRef<maplibregl.Marker[]>([])
-  const popupsRef = useRef<maplibregl.Popup[]>([])
+  const trackedMarkersRef = useRef<TrackedMarker[]>([])
   const prevBusPosRef = useRef<{ lat: number; lng: number } | null>(null)
   const animFrameRef = useRef<number>(0)
   const markerPosRef = useRef<{ lat: number; lng: number } | null>(null)
   const initializedRef = useRef(false)
+  const styleVersionRef = useRef(0) // Track style changes for knowing when to re-add layers
 
   const displayPosition = interpolatedPosition || busLocation
 
-  // Initialize map
-  useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return
+  // ─── Helper: Remove markers by type ──────────────────────────────────────
 
-    const map = new maplibregl.Map({
-      container: mapContainerRef.current,
-      style: isDark ? DARK_STYLE : LIGHT_STYLE,
-      center: [center[1], center[0]], // MapLibre uses [lng, lat]
-      zoom: zoom,
-      attributionControl: false,
-      navigationControl: false,
-    })
+  const removeMarkersByType = useCallback((type: MarkerType) => {
+    const toRemove = trackedMarkersRef.current.filter(tm => tm.type === type)
+    toRemove.forEach(tm => tm.marker.remove())
+    trackedMarkersRef.current = trackedMarkersRef.current.filter(tm => tm.type !== type)
+  }, [])
 
-    if (showZoomControl) {
-      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
+  const removeMarkersByKey = useCallback((key: string) => {
+    const toRemove = trackedMarkersRef.current.filter(tm => tm.key === key)
+    toRemove.forEach(tm => tm.marker.remove())
+    trackedMarkersRef.current = trackedMarkersRef.current.filter(tm => tm.key !== key)
+  }, [])
+
+  // ─── Helper: Add all layers/sources to map ───────────────────────────────
+  // This is called on initial load AND after style changes (dark/light toggle)
+
+  const addAllLayersToMap = useCallback((
+    map: maplibregl.Map,
+    routeGeoJSON: { type: 'Feature'; properties: Record<string, unknown>; geometry: { type: 'LineString'; coordinates: [number, number][] } } | null,
+    traveledGeoJSON: { type: 'Feature'; properties: Record<string, unknown>; geometry: { type: 'LineString'; coordinates: [number, number][] } } | null,
+    trailGeoJSON: { type: 'Feature'; properties: Record<string, unknown>; geometry: { type: 'LineString'; coordinates: [number, number][] } } | null,
+    hasBus: boolean,
+  ) => {
+    // Remove existing layers/sources (safe to call even if they don't exist)
+    const layerIds = ['route-glow', 'route-line', 'route-traveled-glow', 'route-traveled', 'route-dash', 'trail-line']
+    const sourceIds = ['route-source', 'route-traveled-source', 'trail-source']
+    layerIds.forEach(id => { try { if (map.getLayer(id)) map.removeLayer(id) } catch {} })
+    sourceIds.forEach(id => { try { if (map.getSource(id)) map.removeSource(id) } catch {} })
+
+    // Route line
+    if (routeGeoJSON) {
+      map.addSource('route-source', { type: 'geojson', data: routeGeoJSON })
+
+      map.addLayer({
+        id: 'route-glow',
+        type: 'line',
+        source: 'route-source',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': '#10b981',
+          'line-width': 12,
+          'line-opacity': 0.15,
+          'line-blur': 6,
+        },
+      })
+
+      map.addLayer({
+        id: 'route-line',
+        type: 'line',
+        source: 'route-source',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': '#10b981',
+          'line-width': 4,
+          'line-opacity': 0.4,
+          'line-dasharray': [0, 4, 3],
+        },
+      })
+
+      // If no bus position, show solid route
+      if (!hasBus) {
+        map.addLayer({
+          id: 'route-dash',
+          type: 'line',
+          source: 'route-source',
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: {
+            'line-color': '#10b981',
+            'line-width': 4,
+            'line-opacity': 0.9,
+          },
+        })
+      }
     }
 
-    // Add compact attribution
-    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
+    // Traveled portion
+    if (traveledGeoJSON) {
+      map.addSource('route-traveled-source', { type: 'geojson', data: traveledGeoJSON })
 
-    map.on('load', () => {
-      initializedRef.current = true
-    })
+      map.addLayer({
+        id: 'route-traveled-glow',
+        type: 'line',
+        source: 'route-traveled-source',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': '#10b981',
+          'line-width': 10,
+          'line-opacity': 0.25,
+          'line-blur': 4,
+        },
+      })
 
-    // Click handler
-    if (onMapClick) {
-      map.on('click', (e) => {
-        onMapClick(e.lngLat.lat, e.lngLat.lng)
+      map.addLayer({
+        id: 'route-traveled',
+        type: 'line',
+        source: 'route-traveled-source',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': '#10b981',
+          'line-width': 5,
+          'line-opacity': 1,
+        },
       })
     }
 
-    mapRef.current = map
-
-    return () => {
-      // Cleanup markers
-      markersRef.current.forEach(m => m.remove())
-      markersRef.current = []
-      popupsRef.current.forEach(p => p.remove())
-      popupsRef.current = []
-      if (animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current)
-      }
-      map.remove()
-      mapRef.current = null
-      initializedRef.current = false
+    // Trail
+    if (trailGeoJSON) {
+      map.addSource('trail-source', { type: 'geojson', data: trailGeoJSON })
+      map.addLayer({
+        id: 'trail-line',
+        type: 'line',
+        source: 'trail-source',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': '#10b981',
+          'line-width': 3,
+          'line-opacity': 0.25,
+        },
+      })
     }
-  }, []) // Only init once
+  }, [])
 
-  // Update map style on theme change
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !initializedRef.current) return
+  // ─── Memoized GeoJSON ─────────────────────────────────────────────────────
 
-    const currentCenter = map.getCenter()
-    const currentZoom = map.getZoom()
-
-    map.setStyle(isDark ? DARK_STYLE : LIGHT_STYLE)
-
-    // Restore position after style change
-    map.once('style.load', () => {
-      map.setCenter(currentCenter)
-      map.setZoom(currentZoom)
-    })
-  }, [isDark])
-
-  // ─── Route Line Layer ─────────────────────────────────────────────────────
-
-  // Convert [lat, lng] route path to GeoJSON Feature
   const routeGeoJSON = useMemo(() => {
     if (!routePath || routePath.length < 2) return null
     return {
@@ -219,12 +284,11 @@ export default function ShuttleMap({
       properties: {},
       geometry: {
         type: 'LineString' as const,
-        coordinates: routePath.map(([lat, lng]) => [lng, lat]), // MapLibre order
+        coordinates: routePath.map(([lat, lng]) => [lng, lat]),
       },
     }
   }, [routePath])
 
-  // Traveled portion of route
   const traveledGeoJSON = useMemo(() => {
     if (!routePath || routePath.length < 2 || !displayPosition) return null
 
@@ -254,120 +318,105 @@ export default function ShuttleMap({
     }
   }, [routePath, displayPosition])
 
-  // Update route layers
+  const trailGeoJSON = useMemo(() => {
+    if (!trail || trail.length < 2) return null
+    return {
+      type: 'Feature' as const,
+      properties: {},
+      geometry: {
+        type: 'LineString' as const,
+        coordinates: trail.map(t => [t.lng, t.lat]),
+      },
+    }
+  }, [trail])
+
+  // ─── Initialize map ───────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return
+
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: isDark ? DARK_STYLE : LIGHT_STYLE,
+      center: [center[1], center[0]],
+      zoom: zoom,
+      attributionControl: false,
+      navigationControl: false,
+    })
+
+    if (showZoomControl) {
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
+    }
+
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
+
+    map.on('load', () => {
+      initializedRef.current = true
+    })
+
+    if (onMapClick) {
+      map.on('click', (e) => {
+        onMapClick(e.lngLat.lat, e.lngLat.lng)
+      })
+    }
+
+    mapRef.current = map
+
+    return () => {
+      trackedMarkersRef.current.forEach(tm => tm.marker.remove())
+      trackedMarkersRef.current = []
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current)
+      }
+      map.remove()
+      mapRef.current = null
+      initializedRef.current = false
+    }
+  }, []) // Only init once
+
+  // ─── Update map style on theme change ─────────────────────────────────────
+  // CRITICAL FIX: After style change, re-add ALL layers/sources and markers
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !initializedRef.current) return
+
+    const currentCenter = map.getCenter()
+    const currentZoom = map.getZoom()
+
+    // Increment version to track style change
+    styleVersionRef.current++
+
+    map.setStyle(isDark ? DARK_STYLE : LIGHT_STYLE)
+
+    map.once('style.load', () => {
+      // Restore position
+      map.setCenter(currentCenter)
+      map.setZoom(currentZoom)
+
+      // Re-add all layers and sources
+      addAllLayersToMap(map, routeGeoJSON, traveledGeoJSON, trailGeoJSON, !!displayPosition)
+
+      // Re-add all markers (stop, bus, fleet) - they survive style changes as DOM elements
+      // but need to be re-attached to the map
+      trackedMarkersRef.current.forEach(tm => {
+        try {
+          tm.marker.addTo(map)
+        } catch {
+          // Marker may already be on map
+        }
+      })
+    })
+  }, [isDark, addAllLayersToMap, routeGeoJSON, traveledGeoJSON, trailGeoJSON, displayPosition])
+
+  // ─── Update route layers ──────────────────────────────────────────────────
+
   useEffect(() => {
     const map = mapRef.current
     if (!map || !initializedRef.current) return
 
     const updateLayers = () => {
-      // Remove existing layers/sources
-      ;['route-glow', 'route-line', 'route-traveled-glow', 'route-traveled', 'route-dash'].forEach(id => {
-        if (map.getLayer(id)) map.removeLayer(id)
-      })
-      ;['route-source', 'route-traveled-source'].forEach(id => {
-        if (map.getSource(id)) map.removeSource(id)
-      })
-
-      if (routeGeoJSON) {
-        // Full route source
-        map.addSource('route-source', {
-          type: 'geojson',
-          data: routeGeoJSON,
-        })
-
-        // Route glow (wider, semi-transparent)
-        map.addLayer({
-          id: 'route-glow',
-          type: 'line',
-          source: 'route-source',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
-          },
-          paint: {
-            'line-color': isDark ? '#10b981' : '#10b981',
-            'line-width': 12,
-            'line-opacity': 0.15,
-            'line-blur': 6,
-          },
-        })
-
-        // Route line (dashed for remaining portion)
-        map.addLayer({
-          id: 'route-line',
-          type: 'line',
-          source: 'route-source',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
-          },
-          paint: {
-            'line-color': isDark ? '#10b981' : '#10b981',
-            'line-width': 4,
-            'line-opacity': 0.4,
-            'line-dasharray': [0, 4, 3],
-          },
-        })
-      }
-
-      // Traveled portion (solid, bright)
-      if (traveledGeoJSON) {
-        map.addSource('route-traveled-source', {
-          type: 'geojson',
-          data: traveledGeoJSON,
-        })
-
-        // Traveled glow
-        map.addLayer({
-          id: 'route-traveled-glow',
-          type: 'line',
-          source: 'route-traveled-source',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
-          },
-          paint: {
-            'line-color': '#10b981',
-            'line-width': 10,
-            'line-opacity': 0.25,
-            'line-blur': 4,
-          },
-        })
-
-        // Traveled solid line
-        map.addLayer({
-          id: 'route-traveled',
-          type: 'line',
-          source: 'route-traveled-source',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
-          },
-          paint: {
-            'line-color': '#10b981',
-            'line-width': 5,
-            'line-opacity': 1,
-          },
-        })
-      }
-
-      // Animated dash layer on top of route
-      if (routeGeoJSON && !displayPosition) {
-        map.addLayer({
-          id: 'route-dash',
-          type: 'line',
-          source: 'route-source',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
-          },
-          paint: {
-            'line-color': '#10b981',
-            'line-width': 4,
-            'line-opacity': 0.9,
-          },
-        })
-      }
+      addAllLayersToMap(map, routeGeoJSON, traveledGeoJSON, trailGeoJSON, !!displayPosition)
     }
 
     if (map.isStyleLoaded()) {
@@ -375,28 +424,26 @@ export default function ShuttleMap({
     } else {
       map.once('style.load', updateLayers)
     }
-  }, [routeGeoJSON, traveledGeoJSON, displayPosition, isDark])
+  }, [routeGeoJSON, traveledGeoJSON, trailGeoJSON, displayPosition, isDark, addAllLayersToMap])
 
-  // ─── Stop Markers ────────────────────────────────────────────────────────
+  // ─── Stop Markers ─────────────────────────────────────────────────────────
+  // FIX: Only remove stop markers, not bus/fleet markers
 
-  // Update stop markers
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !initializedRef.current || !stops || stops.length === 0) return
+    if (!map || !initializedRef.current) return
 
     const updateStops = () => {
-      // Remove existing stop markers
-      markersRef.current.forEach(m => m.remove())
-      markersRef.current = []
-      popupsRef.current.forEach(p => p.remove())
-      popupsRef.current = []
+      // Only remove stop markers
+      removeMarkersByType('stop')
+
+      if (!stops || stops.length === 0) return
 
       stops.forEach((stop, index) => {
         const isStudent = studentStop && stop.name === studentStop.name
         const isFirst = index === 0
         const isLast = index === stops.length - 1
 
-        // Create marker element
         const el = document.createElement('div')
         el.className = 'shuttle-stop-marker'
 
@@ -434,7 +481,7 @@ export default function ShuttleMap({
           position: relative;
         `
 
-        // Time label for stops with estimated minutes
+        // Time label
         if (stop.estimatedMinutes != null || isStudent) {
           const label = document.createElement('div')
           const timeText = stop.estimatedMinutes != null
@@ -446,7 +493,7 @@ export default function ShuttleMap({
             top: ${size + 4}px;
             left: 50%;
             transform: translateX(-50%);
-            background: #1a1a2e;
+            background: ${isDark ? '#1f2937' : '#1a1a2e'};
             color: white;
             font-size: 9px;
             font-weight: 800;
@@ -491,7 +538,11 @@ export default function ShuttleMap({
           .setLngLat([stop.lng, stop.lat])
           .addTo(map)
 
-        markersRef.current.push(marker)
+        trackedMarkersRef.current.push({
+          marker,
+          type: 'stop',
+          key: `stop-${index}-${stop.name}`,
+        })
       })
     }
 
@@ -500,23 +551,26 @@ export default function ShuttleMap({
     } else {
       map.once('style.load', updateStops)
     }
-  }, [stops, studentStop, eta, isDark])
+  }, [stops, studentStop, eta, isDark, removeMarkersByType])
 
-  // ─── Bus Marker with Smooth Animation ────────────────────────────────────
+  // ─── Bus Marker with Smooth Animation ─────────────────────────────────────
+  // FIX: Track bus marker by type 'bus-main'
 
-  // Create/update the live bus marker
   useEffect(() => {
     const map = mapRef.current
     if (!map || !initializedRef.current) return
 
     const updateBusMarker = () => {
-      if (!showLiveBus || !displayPosition) return
+      if (!showLiveBus || !displayPosition) {
+        // Remove bus marker if not showing
+        removeMarkersByKey('bus-main')
+        return
+      }
 
-      // Remove old bus markers (first 1 or fleet markers are separate)
-      // We track the main bus marker separately
-      const existingBusMarker = markersRef.current.find(
-        m => m.getElement()?.classList.contains('bus-marker-main')
+      const existingTm = trackedMarkersRef.current.find(
+        tm => tm.key === 'bus-main'
       )
+      const existingBusMarker = existingTm?.marker
 
       const el = existingBusMarker?.getElement() || createBusMarkerElement(busLocation?.heading ?? 0, busLocation?.speed, true, '#10b981')
       el.classList.add('bus-marker-main')
@@ -525,7 +579,11 @@ export default function ShuttleMap({
         const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
           .setLngLat([displayPosition.lng, displayPosition.lat])
           .addTo(map)
-        markersRef.current.push(marker)
+        trackedMarkersRef.current.push({
+          marker,
+          type: 'bus-main',
+          key: 'bus-main',
+        })
         markerPosRef.current = { lat: displayPosition.lat, lng: displayPosition.lng }
         prevBusPosRef.current = { lat: displayPosition.lat, lng: displayPosition.lng }
       } else {
@@ -551,20 +609,17 @@ export default function ShuttleMap({
             Math.pow(newPos.lng - prevPos.lng, 2)
           )
 
-          // Cancel existing animation
           if (animFrameRef.current) {
             cancelAnimationFrame(animFrameRef.current)
           }
 
           if (dist < 0.00003) {
-            // Tiny movement, just snap
             existingBusMarker.setLngLat([newPos.lng, newPos.lat])
             markerPosRef.current = newPos
             prevBusPosRef.current = newPos
             return
           }
 
-          // Smooth animation with easing
           const duration = Math.min(Math.max(600, dist * 400000), 2500)
           const startTime = performance.now()
           const startLat = prevPos.lat
@@ -574,7 +629,6 @@ export default function ShuttleMap({
 
           const animate = (now: number) => {
             const t = Math.min((now - startTime) / duration, 1)
-            // Ease-out quintic - buttery Uber feel
             const eased = 1 - Math.pow(1 - t, 5)
             const currentLat = startLat + deltaLat * eased
             const currentLng = startLng + deltaLng * eased
@@ -610,23 +664,20 @@ export default function ShuttleMap({
         cancelAnimationFrame(animFrameRef.current)
       }
     }
-  }, [displayPosition, showLiveBus, busLocation, isDark])
+  }, [displayPosition, showLiveBus, busLocation, isDark, removeMarkersByKey])
 
   // ─── Fleet Bus Markers ────────────────────────────────────────────────────
+  // FIX: Track fleet markers individually by busId
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !initializedRef.current || !fleetBuses || fleetBuses.length === 0) return
+    if (!map || !initializedRef.current) return
 
     const updateFleet = () => {
-      // Remove fleet markers (those with fleet-marker class)
-      markersRef.current = markersRef.current.filter(m => {
-        if (m.getElement()?.classList.contains('fleet-marker')) {
-          m.remove()
-          return false
-        }
-        return true
-      })
+      // Remove all existing fleet markers
+      removeMarkersByType('fleet')
+
+      if (!fleetBuses || fleetBuses.length === 0) return
 
       fleetBuses.forEach(fb => {
         const el = createBusMarkerElement(
@@ -645,7 +696,7 @@ export default function ShuttleMap({
             top: calc(100% + 3px);
             left: 50%;
             transform: translateX(-50%);
-            background: #1a1a2e;
+            background: ${isDark ? '#1f2937' : '#1a1a2e'};
             color: white;
             font-size: 10px;
             font-weight: 700;
@@ -662,7 +713,11 @@ export default function ShuttleMap({
         const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
           .setLngLat([fb.lng, fb.lat])
           .addTo(map)
-        markersRef.current.push(marker)
+        trackedMarkersRef.current.push({
+          marker,
+          type: 'fleet',
+          key: `fleet-${fb.busId}`,
+        })
       })
     }
 
@@ -671,7 +726,7 @@ export default function ShuttleMap({
     } else {
       map.once('style.load', updateFleet)
     }
-  }, [fleetBuses, isDark])
+  }, [fleetBuses, isDark, removeMarkersByType])
 
   // ─── Camera Follow ────────────────────────────────────────────────────────
 
@@ -682,16 +737,20 @@ export default function ShuttleMap({
     map.easeTo({
       center: [displayPosition.lng, displayPosition.lat],
       duration: 1200,
-      easing: (t) => 1 - Math.pow(1 - t, 3), // ease-out cubic
+      easing: (t) => 1 - Math.pow(1 - t, 3),
     })
   }, [followBus, displayPosition])
 
-  // ─── Fit Bounds on Initial Load ───────────────────────────────────────────
+  // ─── Fit Bounds ───────────────────────────────────────────────────────────
+  // FIX: Use a version counter instead of hasFittedRef for fleet views
+  // For fleet view (no routePath, no stops), re-fit when fleet buses change
 
-  const hasFittedRef = useRef(false)
+  const fitVersionRef = useRef(0)
+  const lastFitDataRef = useRef<string>('')
+
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !initializedRef.current || hasFittedRef.current) return
+    if (!map || !initializedRef.current) return
 
     const points: [number, number][] = [] // [lng, lat]
     if (routePath && routePath.length > 0) {
@@ -707,69 +766,34 @@ export default function ShuttleMap({
       fleetBuses.forEach(fb => points.push([fb.lng, fb.lat]))
     }
 
-    if (points.length > 0) {
-      const bounds = new maplibregl.LngLatBounds()
-      points.forEach(p => bounds.extend(p as [number, number]))
+    if (points.length === 0) return
 
-      map.fitBounds(bounds, {
-        padding: { top: 50, bottom: 50, left: 50, right: 50 },
-        maxZoom: 15,
-        duration: 1000,
-      })
-      hasFittedRef.current = true
-    }
-  }, [routePath, stops, displayPosition, fleetBuses])
+    // Create a fingerprint of the data to avoid re-fitting with same data
+    const fingerprint = `${routePath?.length ?? 0}-${stops?.length ?? 0}-${fleetBuses?.length ?? 0}-${!!displayPosition}`
 
-  // ─── Trail Line ───────────────────────────────────────────────────────────
+    // For route+stops views: fit once when data first arrives
+    // For fleet-only views: re-fit when fleet buses change
+    const hasRouteData = (routePath && routePath.length > 0) || (stops && stops.length > 0)
 
-  const trailGeoJSON = useMemo(() => {
-    if (!trail || trail.length < 2) return null
-    return {
-      type: 'Feature' as const,
-      properties: {},
-      geometry: {
-        type: 'LineString' as const,
-        coordinates: trail.map(t => [t.lng, t.lat]),
-      },
-    }
-  }, [trail])
-
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !initializedRef.current) return
-
-    const updateTrail = () => {
-      if (map.getLayer('trail-line')) map.removeLayer('trail-line')
-      if (map.getSource('trail-source')) map.removeSource('trail-source')
-
-      if (trailGeoJSON) {
-        map.addSource('trail-source', {
-          type: 'geojson',
-          data: trailGeoJSON,
-        })
-        map.addLayer({
-          id: 'trail-line',
-          type: 'line',
-          source: 'trail-source',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
-          },
-          paint: {
-            'line-color': '#10b981',
-            'line-width': 3,
-            'line-opacity': 0.25,
-          },
-        })
-      }
-    }
-
-    if (map.isStyleLoaded()) {
-      updateTrail()
+    if (hasRouteData) {
+      // Route view: only fit once per unique data set
+      if (fingerprint === lastFitDataRef.current) return
     } else {
-      map.once('style.load', updateTrail)
+      // Fleet view: allow re-fitting when fleet buses change
+      if (fingerprint === lastFitDataRef.current) return
     }
-  }, [trailGeoJSON, isDark])
+
+    lastFitDataRef.current = fingerprint
+
+    const bounds = new maplibregl.LngLatBounds()
+    points.forEach(p => bounds.extend(p as [number, number]))
+
+    map.fitBounds(bounds, {
+      padding: { top: 50, bottom: 50, left: 50, right: 50 },
+      maxZoom: 15,
+      duration: 1000,
+    })
+  }, [routePath, stops, displayPosition, fleetBuses])
 
   return (
     <div className={`h-full w-full rounded-2xl overflow-hidden ${className ?? ''}`} style={{ minHeight: 250 }}>
@@ -797,7 +821,6 @@ function createBusMarkerElement(
     cursor: pointer;
   `
 
-  // Parse color for rgba
   const hex = color.replace('#', '')
   const r = parseInt(hex.substring(0, 2), 16)
   const g = parseInt(hex.substring(2, 4), 16)
@@ -851,7 +874,6 @@ function createBusMarkerElement(
     z-index: 2;
   `
 
-  // Bus SVG icon
   icon.innerHTML = `
     <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="none">
       <rect x="4" y="3" width="16" height="14" rx="3" fill="white"/>

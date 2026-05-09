@@ -39,7 +39,6 @@ export default function FleetTracking() {
         const coords = JSON.parse(bus.routeCoordinates || '[]')
         if (Array.isArray(coords) && coords.length > 1) {
           paths[bus.id] = coords.map((c: [number, number]) => {
-            // routeCoordinates may store [lng, lat] (MapLibre order) or [lat, lng]
             // If first value > 90, it's likely longitude, so swap
             if (c[0] > 90) return [c[1], c[0]] as [number, number]
             return [c[0], c[1]] as [number, number]
@@ -52,15 +51,16 @@ export default function FleetTracking() {
     return paths
   }, [buses])
 
-  // Fleet buses for map display - filter out buses with no valid coordinates
+  // Fleet buses for map display - include ALL buses, even those with 0,0 coords
+  // The map will handle them gracefully (they just won't appear visually)
   const fleetBuses = useMemo(() => {
     if (!locations || locations.length === 0) return []
     return locations
-      .filter((loc) => loc.lat !== 0 && loc.lng !== 0) // Only show buses with valid coordinates
-      .map((loc, index) => ({
+      .filter((loc) => loc.lat !== 0 && loc.lng !== 0) // Only show on map if valid coords
+      .map((loc) => ({
         busId: loc.busId,
-        busName: loc.busName,
-        plateNumber: loc.plateNumber,
+        busName: loc.busName || 'Unknown Bus',
+        plateNumber: loc.plateNumber || '',
         lat: loc.lat,
         lng: loc.lng,
         heading: loc.heading ?? undefined,
@@ -69,22 +69,39 @@ export default function FleetTracking() {
         lastUpdate: loc.timestamp
           ? formatDistanceToNow(new Date(loc.timestamp), { addSuffix: true })
           : undefined,
-        color: BUS_COLORS[index % BUS_COLORS.length],
+        color: BUS_COLORS[locations.indexOf(loc) % BUS_COLORS.length],
       }))
   }, [locations])
 
   // Selected bus route path
   const selectedRoutePath = selectedBusId ? busRoutePaths[selectedBusId] || null : null
 
-  // Selected bus stops (from routeStopCoordinates)
+  // Selected bus stops (from routeStopCoordinates - stored as object {name: [lat, lng]})
   const selectedBusStops = useMemo(() => {
     if (!selectedBusId) return undefined
     const bus = buses.find(b => b.id === selectedBusId)
     if (!bus) return undefined
+
     try {
-      const stops = JSON.parse(bus.routeStopCoordinates || '[]')
-      if (Array.isArray(stops) && stops.length > 0) {
-        return stops.map((s: { name?: string; lat: number; lng: number; order?: number; estimatedMinutes?: number }) => ({
+      // Try object format first: { "Stop Name": [lat, lng] }
+      const stopCoords = JSON.parse(bus.routeStopCoordinates || '{}')
+      if (typeof stopCoords === 'object' && !Array.isArray(stopCoords) && Object.keys(stopCoords).length > 0) {
+        return Object.entries(stopCoords).map(([name, coord], idx) => {
+          const c = coord as [number, number]
+          // Handle both [lat, lng] and [lng, lat] formats
+          const isLngFirst = c[0] > 90
+          return {
+            name,
+            lat: isLngFirst ? c[1] : c[0],
+            lng: isLngFirst ? c[0] : c[1],
+            estimatedMinutes: undefined,
+          }
+        })
+      }
+
+      // Try array format: [{ name, lat, lng, ... }]
+      if (Array.isArray(stopCoords) && stopCoords.length > 0) {
+        return stopCoords.map((s: { name?: string; lat: number; lng: number; estimatedMinutes?: number }) => ({
           name: s.name || 'Stop',
           lat: s.lat,
           lng: s.lng,
@@ -101,7 +118,7 @@ export default function FleetTracking() {
   const selectedBusLocation = useMemo(() => {
     if (!selectedBusId) return undefined
     const loc = locations.find(l => l.busId === selectedBusId)
-    if (!loc) return undefined
+    if (!loc || (loc.lat === 0 && loc.lng === 0)) return undefined
     return {
       lat: loc.lat,
       lng: loc.lng,
@@ -118,12 +135,13 @@ export default function FleetTracking() {
     const bus = buses.find(b => b.id === selectedBusId)
     return {
       ...loc,
+      busName: loc.busName || bus?.name || 'Unknown',
       routeStart: bus?.routeStart,
       routeEnd: bus?.routeEnd,
     }
   }, [selectedBusId, locations, buses])
 
-  // Map center and zoom - focus on Sri Lanka Colombo area by default
+  // Map center and zoom
   const mapCenter = useMemo((): [number, number] => {
     if (selectedBusId && selectedBusLocation) {
       return [selectedBusLocation.lat, selectedBusLocation.lng]
@@ -284,10 +302,10 @@ export default function FleetTracking() {
               {selectedBusId ? 'Other Buses' : 'All Buses'}
             </h3>
             {locations.length > 0 ? (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
+              <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
                 {locations
                   .filter(loc => !selectedBusId || loc.busId !== selectedBusId)
-                  .map((loc, index) => {
+                  .map((loc) => {
                   const busColor = BUS_COLORS[locations.indexOf(loc) % BUS_COLORS.length]
                   const isSelected = selectedBusId === loc.busId
                   return (
@@ -308,7 +326,7 @@ export default function FleetTracking() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{loc.busName}</p>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{loc.busName || 'Unknown'}</p>
                           {loc.isLive ? (
                             <div className="flex items-center gap-1">
                               <span className="relative flex h-2 w-2">
@@ -318,17 +336,17 @@ export default function FleetTracking() {
                               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Live</span>
                             </div>
                           ) : (
-                            <span className="text-[10px] text-gray-400 font-medium">Offline</span>
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">Offline</span>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground">{loc.plateNumber} &middot; {loc.routeName}</p>
+                        <p className="text-xs text-muted-foreground">{loc.plateNumber || 'N/A'} &middot; {loc.routeName || 'N/A'}</p>
                         {loc.timestamp && (
                           <p className="text-[10px] text-muted-foreground">
                             {loc.isLive ? 'Updated' : 'Last seen'} {formatDistanceToNow(new Date(loc.timestamp), { addSuffix: true })}
                           </p>
                         )}
                       </div>
-                      <MapPin className="w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" />
+                      <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                     </div>
                   )
                 })}

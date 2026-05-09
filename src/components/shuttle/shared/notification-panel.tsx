@@ -12,9 +12,9 @@ import { format } from 'date-fns'
 import type { Notification, NotificationType } from '@/lib/types'
 
 const typeConfig: Record<NotificationType, { icon: React.ElementType; color: string }> = {
-  PAYMENT_REMINDER: { icon: BellRing, color: 'bg-amber-50 dark:bg-amber-900/50 text-amber-600' },
+  PAYMENT_REMINDER: { icon: BellRing, color: 'bg-amber-50 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400' },
   PAYMENT_RECEIVED: { icon: DollarSign, color: 'bg-emerald-50 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400' },
-  GENERAL: { icon: Info, color: 'bg-blue-50 dark:bg-blue-900/50 text-blue-600' },
+  GENERAL: { icon: Info, color: 'bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' },
 }
 
 export default function NotificationPanel() {

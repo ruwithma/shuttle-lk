@@ -274,9 +274,9 @@ export default function ShuttleFinder() {
   }, [selectedShuttle, liveBusesFromSocket])
 
   const getOccupancyColor = (pct: number) => {
-    if (pct >= 90) return 'text-red-600 bg-red-50 dark:bg-red-900/30'
-    if (pct >= 70) return 'text-amber-600 bg-amber-50 dark:bg-amber-900/30'
-    return 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30'
+    if (pct >= 90) return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30'
+    if (pct >= 70) return 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30'
+    return 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30'
   }
 
   const liveBusCount = liveBusesFromSocket.size
@@ -331,7 +331,7 @@ export default function ShuttleFinder() {
                 onClick={() => { setQuery(''); fetchShuttles() }}
                 className="absolute right-3 top-1/2 -translate-y-1/2"
               >
-                <X className="w-4 h-4 text-gray-400" />
+                <X className="w-4 h-4 text-gray-400 dark:text-gray-500" />
               </button>
             )}
           </div>
@@ -512,7 +512,7 @@ export default function ShuttleFinder() {
                       </>
                     ) : (
                       <>
-                        <WifiOff className="w-4 h-4 text-gray-400 mx-auto mb-1" />
+                        <WifiOff className="w-4 h-4 text-gray-400 dark:text-gray-500 mx-auto mb-1" />
                         <p className="text-sm font-bold text-gray-500 dark:text-gray-400">Offline</p>
                       </>
                     )}
@@ -606,7 +606,7 @@ export default function ShuttleFinder() {
                           <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
                             isActuallyLive ? 'bg-emerald-100 dark:bg-emerald-900/50' : 'bg-gray-50 dark:bg-gray-800'
                           }`}>
-                            <BusIcon className={`w-5 h-5 ${isActuallyLive ? 'text-emerald-600' : 'text-gray-400'}`} />
+                            <BusIcon className={`w-5 h-5 ${isActuallyLive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
@@ -631,7 +631,7 @@ export default function ShuttleFinder() {
                             {/* Bottom row */}
                             <div className="flex items-center gap-3 mt-2">
                               <div className="flex items-center gap-1">
-                                <Users className="w-3 h-3 text-gray-400" />
+                                <Users className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                                 <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
                                   {shuttle.seatsAvailable} seats
                                 </span>
@@ -651,7 +651,7 @@ export default function ShuttleFinder() {
                               )}
                             </div>
                           </div>
-                          <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0 mt-1" />
+                          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1" />
                         </div>
                       </CardContent>
                     </Card>

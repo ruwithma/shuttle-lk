@@ -392,7 +392,7 @@ export default function RouteRecorder() {
                   onClick={clearRecording}
                   variant="outline"
                   size="sm"
-                  className="rounded-xl text-xs text-red-600 hover:bg-red-50"
+                  className="rounded-xl text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
@@ -477,7 +477,7 @@ export default function RouteRecorder() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 rounded-full text-red-400 hover:bg-red-50"
+                      className="h-7 w-7 p-0 rounded-full text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                       onClick={() => setRecordedStops(prev => prev.filter((_, i) => i !== idx))}
                     >
                       <X className="w-3 h-3" />
@@ -565,7 +565,7 @@ export default function RouteRecorder() {
                 <Button
                   onClick={clearRecording}
                   variant="outline"
-                  className="rounded-xl text-red-600 hover:bg-red-50"
+                  className="rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                 >
                   <RotateCcw className="w-4 h-4" />
                 </Button>
@@ -611,7 +611,7 @@ export default function RouteRecorder() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 rounded-full text-red-400 hover:bg-red-50"
+                      className="h-7 w-7 p-0 rounded-full text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                       onClick={() => deleteRoute(route.id)}
                     >
                       <Trash2 className="w-3 h-3" />

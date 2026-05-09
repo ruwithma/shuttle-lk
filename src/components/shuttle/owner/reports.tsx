@@ -476,7 +476,7 @@ export default function OwnerReports({ onBack }: ReportsProps) {
 
                         <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50 dark:border-gray-700">
                           <div className="flex items-center gap-1">
-                            <Users className="w-3 h-3 text-gray-400" />
+                            <Users className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                             <span className="text-[11px] text-muted-foreground">{bus.studentCount} students</span>
                           </div>
                           <div className="flex items-center gap-2">

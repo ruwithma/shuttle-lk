@@ -242,11 +242,9 @@ export function useFleetLocations(ownerId: string | null | undefined) {
       .then((data) => {
         if (cancelled || !data) return
         if (data.locations && Array.isArray(data.locations)) {
-          // Filter out buses with invalid coordinates (0,0 means no location)
-          const validLocations = data.locations.filter(
-            (loc: { lat: number; lng: number }) => loc.lat !== 0 && loc.lng !== 0
-          )
-          setLocations(validLocations)
+          // Include ALL buses, even those with 0,0 coordinates
+          // They may get valid coordinates later via WebSocket
+          setLocations(data.locations)
         }
       })
       .catch(() => {})
@@ -289,8 +287,8 @@ export function useFleetLocations(ownerId: string | null | undefined) {
                   ...loc,
                   lat: data.lat,
                   lng: data.lng,
-                  speed: data.speed ?? null,
-                  heading: data.heading ?? null,
+                  speed: data.speed ?? loc.speed,
+                  heading: data.heading ?? loc.heading,
                   timestamp: data.timestamp ?? new Date().toISOString(),
                   isLive: true,
                 }

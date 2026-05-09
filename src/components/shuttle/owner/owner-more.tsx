@@ -84,7 +84,7 @@ export default function OwnerMore() {
                       <p className="text-xs text-muted-foreground">{item.description}</p>
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                  <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                 </div>
               </CardContent>
             </Card>

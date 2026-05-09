@@ -92,7 +92,7 @@ export default function Header() {
                   exit={{ rotate: -90, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Moon className="w-4.5 h-4.5 text-gray-600" />
+                  <Moon className="w-4.5 h-4.5 text-gray-600 dark:text-gray-300" />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -140,7 +140,7 @@ export default function Header() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{currentUser.phone}</p>
               </div>
-              <DropdownMenuItem onClick={logout} className="text-red-600 cursor-pointer">
+              <DropdownMenuItem onClick={logout} className="text-red-600 dark:text-red-400 cursor-pointer">
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </DropdownMenuItem>

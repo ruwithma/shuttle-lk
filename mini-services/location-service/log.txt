@@ -242,3 +242,18 @@ $ bun --hot index.ts
 [connection] socket=iutATRvYs8cVZyeyAAAt
 [disconnect] socket=iutATRvYs8cVZyeyAAAt (reason: transport close)
 [disconnect] socket=bvyyRWM-vV4Plpa9AAAn was driver of bus=cmoymbaap009omgumiz8snlsr, removed from live map (reason: ping timeout)
+[connection] socket=GBKpSbv3MreG2UI4AAAv
+[driver-start] socket=GBKpSbv3MreG2UI4AAAv bus=cmoyny3kh00ffmgummjb0az8u driver=Nimal Silva busName=Kadawatha Route owner=cmoyny3jx00evmgums9iivure
+[driver-location] bus=cmoyny3kh00ffmgummjb0az8u lat=6.9354 lng=79.84915000000001 speed=42 heading=58
+[subscribe-bus] socket=GBKpSbv3MreG2UI4AAAv joined bus:cmoyny3kh00ffmgummjb0az8u
+[unsubscribe-bus] socket=GBKpSbv3MreG2UI4AAAv left bus:cmoyny3kh00ffmgummjb0az8u
+[subscribe-bus] socket=GBKpSbv3MreG2UI4AAAv joined bus:cmoyny3kh00ffmgummjb0az8u
+[unsubscribe-bus] socket=GBKpSbv3MreG2UI4AAAv left bus:cmoyny3kh00ffmgummjb0az8u
+[subscribe-all-live] socket=GBKpSbv3MreG2UI4AAAv joined all-live
+[unsubscribe-all-live] socket=GBKpSbv3MreG2UI4AAAv left all-live
+[subscribe-bus] socket=GBKpSbv3MreG2UI4AAAv joined bus:cmoyny3kh00ffmgummjb0az8u
+[unsubscribe-bus] socket=GBKpSbv3MreG2UI4AAAv left bus:cmoyny3kh00ffmgummjb0az8u
+[subscribe-owner] socket=GBKpSbv3MreG2UI4AAAv joined owner:cmoyny3jx00evmgums9iivure
+[unsubscribe-owner] socket=GBKpSbv3MreG2UI4AAAv left owner:cmoyny3jx00evmgums9iivure
+[subscribe-owner] socket=GBKpSbv3MreG2UI4AAAv joined owner:cmoyny3jx00evmgums9iivure
+[disconnect] socket=GBKpSbv3MreG2UI4AAAv was driver of bus=cmoyny3kh00ffmgummjb0az8u, removed from live map (reason: ping timeout)
