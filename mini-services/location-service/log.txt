@@ -257,3 +257,8 @@ $ bun --hot index.ts
 [unsubscribe-owner] socket=GBKpSbv3MreG2UI4AAAv left owner:cmoyny3jx00evmgums9iivure
 [subscribe-owner] socket=GBKpSbv3MreG2UI4AAAv joined owner:cmoyny3jx00evmgums9iivure
 [disconnect] socket=GBKpSbv3MreG2UI4AAAv was driver of bus=cmoyny3kh00ffmgummjb0az8u, removed from live map (reason: ping timeout)
+$ bun --hot index.ts
+🚌 Location tracking WebSocket server running on port 3003
+🚌 Location tracking WebSocket server running on port 3003
+🚌 Location tracking WebSocket server running on port 3003
+🚌 Location tracking WebSocket server running on port 3003
