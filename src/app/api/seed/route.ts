@@ -12,40 +12,50 @@ async function getOSRMRoute(waypoints: [number, number][]): Promise<[number, num
 
   const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`
 
-  try {
-    const response = await fetch(url, {
-      headers: { 'User-Agent': 'ShuttleLK/1.0' },
-      signal: AbortSignal.timeout(15000),
-    })
+  // Try up to 3 times with increasing delays (OSRM demo server rate limits)
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'ShuttleLK/1.0' },
+        signal: AbortSignal.timeout(20000),
+      })
 
-    if (!response.ok) return null
-
-    const data = await response.json()
-    if (data.code !== 'Ok' || !data.routes?.length) return null
-
-    const route = data.routes[0]
-    const coords: [number, number][] = route.geometry.coordinates.map(
-      ([lng, lat]: [number, number]) => [lat, lng]
-    )
-
-    // Simplify to ~80 points
-    if (coords.length > 80) {
-      const step = Math.max(1, Math.floor(coords.length / 80))
-      const simplified: [number, number][] = []
-      for (let i = 0; i < coords.length; i += step) {
-        simplified.push(coords[i])
+      if (!response.ok) {
+        if (attempt < 2) { await new Promise(r => setTimeout(r, 2000 * (attempt + 1))); continue }
+        return null
       }
-      if (simplified[simplified.length - 1][0] !== coords[coords.length - 1][0] ||
-          simplified[simplified.length - 1][1] !== coords[coords.length - 1][1]) {
-        simplified.push(coords[coords.length - 1])
+
+      const data = await response.json()
+      if (data.code !== 'Ok' || !data.routes?.length) {
+        if (attempt < 2) { await new Promise(r => setTimeout(r, 2000 * (attempt + 1))); continue }
+        return null
       }
-      return simplified
+
+      const route = data.routes[0]
+      const coords: [number, number][] = route.geometry.coordinates.map(
+        ([lng, lat]: [number, number]) => [lat, lng]
+      )
+
+      // Simplify to ~80 points
+      if (coords.length > 80) {
+        const step = Math.max(1, Math.floor(coords.length / 80))
+        const simplified: [number, number][] = []
+        for (let i = 0; i < coords.length; i += step) {
+          simplified.push(coords[i])
+        }
+        if (simplified[simplified.length - 1][0] !== coords[coords.length - 1][0] ||
+            simplified[simplified.length - 1][1] !== coords[coords.length - 1][1]) {
+          simplified.push(coords[coords.length - 1])
+        }
+        return simplified
+      }
+
+      return coords
+    } catch {
+      if (attempt < 2) { await new Promise(r => setTimeout(r, 2000 * (attempt + 1))); continue }
     }
-
-    return coords
-  } catch {
-    return null
   }
+  return null
 }
 
 // ── Fallback linear-interpolated coordinates ─────────────────────────────
@@ -141,13 +151,12 @@ export async function POST(request: NextRequest) {
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
     // ── Get road-following routes from OSRM (with fallback) ────────────────
+    // Fetch sequentially to avoid rate-limiting on the free OSRM demo server
     console.log('Fetching road-following routes from OSRM...')
 
-    const [kadawathaOSRM, kiribathgodaOSRM, colomboFortOSRM] = await Promise.all([
-      getOSRMRoute(kadawathaWaypoints),
-      getOSRMRoute(kiribathgodaWaypoints),
-      getOSRMRoute(colomboFortWaypoints),
-    ])
+    const kadawathaOSRM = await getOSRMRoute(kadawathaWaypoints)
+    const kiribathgodaOSRM = await getOSRMRoute(kiribathgodaWaypoints)
+    const colomboFortOSRM = await getOSRMRoute(colomboFortWaypoints)
 
     const kadawathaRouteCoords: [number, number][] = kadawathaOSRM ?? kadawathaFallback
     const kiribathgodaRouteCoords: [number, number][] = kiribathgodaOSRM ?? kiribathgodaFallback

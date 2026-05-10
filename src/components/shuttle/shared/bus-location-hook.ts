@@ -324,21 +324,9 @@ export function useFleetLocations(ownerId: string | null | undefined) {
               : loc
           )
         } else {
-          return [
-            ...prev,
-            {
-              busId: data.busId,
-              busName: data.busName || '',
-              plateNumber: '',
-              lat: 0,
-              lng: 0,
-              speed: null,
-              heading: null,
-              timestamp: new Date().toISOString(),
-              routeName: '',
-              isLive: true,
-            },
-          ]
+          // Don't add with lat=0, lng=0 — wait for actual location data
+          // The bus-location event will add the bus with real coordinates
+          return prev
         }
       })
     }

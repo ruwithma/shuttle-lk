@@ -70,7 +70,12 @@ export async function POST(req: NextRequest) {
 
     // Also update the bus's route coordinates with the latest recorded route
     // This ensures backward compatibility with existing components
-    const coordStr = JSON.stringify(coordinates)
+    // BUG FIX: Bus.routeCoordinates convention is [lat, lng] pairs,
+    // but the POST body `coordinates` is in [lng, lat] (MapLibre convention).
+    // We must convert back to [lat, lng] before storing on the bus.
+    const busCoordStr = JSON.stringify(
+      coordinates.map((c: [number, number]) => [c[1], c[0]] as [number, number])
+    )
     const stopsCoordStr = stops && stops.length > 0
       ? JSON.stringify(
           stops.reduce((acc: Record<string, [number, number]>, s: any) => {
@@ -83,7 +88,7 @@ export async function POST(req: NextRequest) {
     await db.bus.update({
       where: { id: busId },
       data: {
-        routeCoordinates: coordStr,
+        routeCoordinates: busCoordStr,
         routeStopCoordinates: stopsCoordStr,
         routeName: name,
       },

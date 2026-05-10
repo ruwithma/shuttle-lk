@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useMemo } from 'react'
+import { useEffect, useRef, useCallback, useMemo, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useTheme } from 'next-themes'
@@ -147,8 +147,12 @@ export default function ShuttleMap({
   const prevBusPosRef = useRef<{ lat: number; lng: number } | null>(null)
   const animFrameRef = useRef<number>(0)
   const markerPosRef = useRef<{ lat: number; lng: number } | null>(null)
-  const initializedRef = useRef(false)
   const isStyleChangingRef = useRef(false) // Guard against redundant layer updates during style change
+
+  // FIX: Use React state (not just a ref) so that effects re-run when map becomes ready.
+  // Previously, initializedRef was set in map 'load' callback, but effects checking it
+  // wouldn't re-run because ref changes don't trigger re-renders.
+  const [mapReady, setMapReady] = useState(false)
 
   const displayPosition = interpolatedPosition || busLocation
 
@@ -363,7 +367,7 @@ export default function ShuttleMap({
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
 
     map.on('load', () => {
-      initializedRef.current = true
+      setMapReady(true) // Trigger re-render so dependent effects can add layers/markers
     })
 
     if (onMapClick) {
@@ -382,7 +386,7 @@ export default function ShuttleMap({
       }
       map.remove()
       mapRef.current = null
-      initializedRef.current = false
+      setMapReady(false)
     }
   }, []) // Only init once
 
@@ -392,7 +396,7 @@ export default function ShuttleMap({
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !initializedRef.current) return
+    if (!map || !mapReady) return
 
     const currentCenter = map.getCenter()
     const currentZoom = map.getZoom()
@@ -425,14 +429,14 @@ export default function ShuttleMap({
 
       isStyleChangingRef.current = false
     })
-  }, [isDark]) // Intentionally only depend on isDark — data is accessed via refs
+  }, [isDark, mapReady]) // mapReady ensures we don't try to change style before map loads
 
   // ─── Update route GeoJSON data (efficient setData) ────────────────────────
   // FIX: Use source.setData() instead of removing/re-adding layers on every update
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !initializedRef.current || isStyleChangingRef.current) return
+    if (!map || !mapReady || isStyleChangingRef.current) return
 
     const updateData = () => {
       const hasBus = !!displayPosition
@@ -525,13 +529,13 @@ export default function ShuttleMap({
     } else {
       map.once('style.load', updateData)
     }
-  }, [routeGeoJSON, traveledGeoJSON, trailGeoJSON, displayPosition, addAllLayersToMap])
+  }, [routeGeoJSON, traveledGeoJSON, trailGeoJSON, displayPosition, addAllLayersToMap, mapReady])
 
   // ─── Stop Markers ─────────────────────────────────────────────────────────
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !initializedRef.current || isStyleChangingRef.current) return
+    if (!map || !mapReady || isStyleChangingRef.current) return
 
     const updateStops = () => {
       // Only remove stop markers
@@ -593,7 +597,7 @@ export default function ShuttleMap({
             top: ${size + 4}px;
             left: 50%;
             transform: translateX(-50%);
-            background: ${isDarkRef.current ? '#1f2937' : '#1a1a2e'};
+            background: ${isDarkRef.current ? '#1f2937' : '#111827'};
             color: white;
             font-size: 9px;
             font-weight: 800;
@@ -602,7 +606,7 @@ export default function ShuttleMap({
             white-space: nowrap;
             font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
             letter-spacing: 0.3px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
             pointer-events: none;
           `
           label.textContent = timeText
@@ -651,13 +655,13 @@ export default function ShuttleMap({
     } else {
       map.once('style.load', updateStops)
     }
-  }, [stops, studentStop, eta, isDark, removeMarkersByType])
+  }, [stops, studentStop, eta, isDark, removeMarkersByType, mapReady])
 
   // ─── Bus Marker with Smooth Animation ─────────────────────────────────────
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !initializedRef.current || isStyleChangingRef.current) return
+    if (!map || !mapReady || isStyleChangingRef.current) return
 
     const updateBusMarker = () => {
       if (!showLiveBus || !displayPosition) {
@@ -763,14 +767,14 @@ export default function ShuttleMap({
         cancelAnimationFrame(animFrameRef.current)
       }
     }
-  }, [displayPosition, showLiveBus, busLocation, isDark, removeMarkersByKey])
+  }, [displayPosition, showLiveBus, busLocation, isDark, removeMarkersByKey, mapReady])
 
   // ─── Fleet Bus Markers ────────────────────────────────────────────────────
   // FIX: Update existing marker positions instead of removing/re-creating all
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !initializedRef.current || isStyleChangingRef.current) return
+    if (!map || !mapReady || isStyleChangingRef.current) return
 
     const updateFleet = () => {
       if (!fleetBuses || fleetBuses.length === 0) {
@@ -827,14 +831,14 @@ export default function ShuttleMap({
               top: calc(100% + 3px);
               left: 50%;
               transform: translateX(-50%);
-              background: ${isDarkRef.current ? '#1f2937' : '#1a1a2e'};
+              background: ${isDarkRef.current ? '#1f2937' : '#111827'};
               color: white;
               font-size: 10px;
               font-weight: 700;
               padding: 2px 8px;
               border-radius: 8px;
               white-space: nowrap;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
               pointer-events: none;
             `
             label.textContent = fb.busName
@@ -858,7 +862,7 @@ export default function ShuttleMap({
     } else {
       map.once('style.load', updateFleet)
     }
-  }, [fleetBuses, isDark, removeMarkersByType])
+  }, [fleetBuses, isDark, removeMarkersByType, mapReady])
 
   // ─── Camera Follow ────────────────────────────────────────────────────────
 
@@ -879,7 +883,7 @@ export default function ShuttleMap({
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !initializedRef.current) return
+    if (!map || !mapReady) return
 
     const points: [number, number][] = [] // [lng, lat]
     if (routePath && routePath.length > 0) {
@@ -912,7 +916,7 @@ export default function ShuttleMap({
       maxZoom: 15,
       duration: 1000,
     })
-  }, [routePath, stops, displayPosition, fleetBuses])
+  }, [routePath, stops, displayPosition, fleetBuses, mapReady])
 
   return (
     <div className={`h-full w-full rounded-2xl overflow-hidden ${className ?? ''}`} style={{ minHeight: 250 }}>

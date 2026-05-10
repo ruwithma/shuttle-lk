@@ -226,7 +226,7 @@ export default function FleetTracking() {
         <Card className="rounded-none border-0 shadow-none dark:bg-gray-900 overflow-hidden">
           <div style={{ height: 400 }}>
             <ShuttleMap
-              fleetBuses={selectedBusId ? [] : fleetBuses}
+              fleetBuses={fleetBuses}
               routePath={selectedRoutePath || undefined}
               busLocation={selectedBusLocation}
               stops={selectedBusStops}

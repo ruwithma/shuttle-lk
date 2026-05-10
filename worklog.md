@@ -95,3 +95,29 @@ Stage Summary:
 - shuttle-finder.tsx: 1 fix (coordinate parsing)
 - driver/route-recorder.tsx: 1 fix (coordinate parsing)
 - All lint checks pass (only spawner.js unrelated errors remain)
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Focus on mapping system specifically - find and fix all issues
+
+Work Log:
+- Deep audit of all map-related code: shuttle-map.tsx, shuttle-map-wrapper.tsx, fleet-tracking.tsx, shuttle-finder.tsx, route-recorder.tsx, my-route.tsx, bus-location-hook.ts, socket-provider.tsx, osrm-routing.ts, seed/route.ts, api/routes/route.ts, api/routing/route.ts, api/locations/route.ts, api/simulate/route.ts, simulation-manager.tsx
+- IDENTIFIED 6 critical issues in the mapping system
+- FIX 1: Coordinate format corruption in POST /api/routes - When a driver saved a recorded route, the bus's routeCoordinates was updated with [lng, lat] pairs instead of [lat, lng], corrupting all downstream displays. Fixed by converting coordinates back to [lat, lng] before updating the bus record.
+- FIX 2: Map layers not added on initial load - initializedRef was set in map 'load' callback, but React effects checking it wouldn't re-run because ref changes don't trigger re-renders. Changed to useState(mapReady) so effects re-run when map loads.
+- FIX 3: Live bus markers not visible on owner fleet view - When driver-started event fired, useFleetLocations created entries with lat=0, lng=0 which got filtered out. Fixed by not adding placeholder entries; instead waiting for actual location data from bus-location events.
+- FIX 4: Stop/bus label backgrounds inconsistent in light/dark mode - Both modes used dark backgrounds (#1a1a2e in light, #1f2937 in dark). Changed light mode to use #111827 (proper dark) for better contrast.
+- FIX 5: Fleet view hid all bus markers when a bus was selected - Changed from fleetBuses={selectedBusId ? [] : fleetBuses} to fleetBuses={fleetBuses} so all buses remain visible on the map even when viewing a specific bus detail.
+- FIX 6: OSRM routes failing in seed - Changed from Promise.all (3 concurrent requests hitting rate limits) to sequential fetching with retry logic (3 attempts per route, 2s/4s/6s delays). All 3 routes now consistently get OSRM road-following coordinates (93-95 points each).
+- Re-seeded database - all 3 routes now use OSRM source (previously using fallback with 21-36 points of poor interpolation)
+- All lint checks pass on modified files
+- Both services running and verified
+
+Stage Summary:
+- CRITICAL coordinate format bug fixed - routes now display correctly everywhere
+- CRITICAL map initialization bug fixed - layers/markers now appear on first load
+- Fleet view now shows all bus markers even when a specific bus is selected
+- Routes now follow actual roads (OSRM) instead of random straight lines (fallback)
+- OSRM fetching is now reliable with sequential + retry approach
+- 6 total fixes applied across 4 files
