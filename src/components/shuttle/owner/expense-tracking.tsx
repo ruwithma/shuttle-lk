@@ -24,10 +24,10 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/hooks/use-toast'
+import { invalidateCache } from '@/lib/data-fetcher'
 import { format } from 'date-fns'
+import { formatLKR } from '@/lib/utils'
 import type { Expense, ExpenseCategory } from '@/lib/types'
-
-const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
 const categoryConfig: Record<ExpenseCategory, { color: string; icon: React.ElementType }> = {
   FUEL: { color: 'bg-amber-50 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300', icon: Fuel },
@@ -81,7 +81,7 @@ export default function ExpenseTracking() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
-          amount: parseInt(form.amount),
+          amount: parseFloat(form.amount),
           recordedById: currentUser?.id,
         }),
       })
@@ -89,6 +89,7 @@ export default function ExpenseTracking() {
         toast({ title: 'Success', description: 'Expense added' })
         setShowDialog(false)
         setForm({ busId: '', category: 'FUEL', amount: '', description: '', date: format(new Date(), 'yyyy-MM-dd') })
+        invalidateCache(currentUser?.role || '')
         loadExpenses()
       } else {
         const data = await res.json()

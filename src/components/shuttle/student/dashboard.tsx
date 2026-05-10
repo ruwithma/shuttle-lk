@@ -10,9 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
+import { formatLKR } from '@/lib/utils'
 import type { StudentDashboard as StudentDashboardType } from '@/lib/types'
-
-const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
 const statusConfig = {
   PAID: { icon: CheckCircle2, color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800', badge: 'bg-emerald-600 text-white', label: 'PAID' },

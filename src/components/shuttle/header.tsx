@@ -23,7 +23,7 @@ const roleConfig: Record<UserRole, { label: string; className: string }> = {
 
 export default function Header() {
   const { currentUser, notifications, setActiveTab, logout, isDriverLive } = useAppStore()
-  const { theme, setTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
   if (!currentUser) return null
 
   const unreadCount = notifications.filter((n) => !n.read).length
@@ -71,10 +71,10 @@ export default function Header() {
             variant="ghost"
             size="icon"
             className="rounded-full"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
           >
             <AnimatePresence mode="wait">
-              {theme === 'dark' ? (
+              {resolvedTheme === 'dark' ? (
                 <motion.div
                   key="sun"
                   initial={{ rotate: -90, opacity: 0 }}

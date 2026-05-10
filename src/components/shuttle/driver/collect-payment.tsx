@@ -17,9 +17,8 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/hooks/use-toast'
+import { formatLKR } from '@/lib/utils'
 import type { Subscription, Bus, Payment } from '@/lib/types'
-
-const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
 export default function CollectPayment() {
   const { currentUser } = useAppStore()
@@ -95,7 +94,7 @@ export default function CollectPayment() {
       })
       if (res.ok) {
         const newPayment = await res.json()
-        setRecentCollections([newPayment, ...recentCollections])
+        setRecentCollections(prev => [newPayment, ...prev])
         toast({ title: 'Collected!', description: `${formatLKR(parseFloat(amount))} from ${selectedSub.student?.name || 'Student'}` })
         setSelectedSub(null)
         setAmount('')

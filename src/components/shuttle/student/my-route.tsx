@@ -172,12 +172,23 @@ export default function MyRoute() {
     return trail.map((t) => ({ lat: t.lat, lng: t.lng }))
   }, [trail])
 
-  // Find the student's stop (middle stop)
+  // Find the student's stop
+  // TODO: This should ideally come from the student's subscription data (e.g. a designated stop field).
+  // For now, prefer matching the subscription's routeEnd against stop names, then fall back to second-to-last stop
+  // (most students get off near the destination, not the middle of the route).
   const studentStop = useMemo(() => {
     if (stops.length === 0) return null
-    const midIdx = Math.floor(stops.length / 2)
-    return stops[midIdx]
-  }, [stops])
+    // If subscription data includes a routeEnd, try to find it in stops
+    if (subscription?.bus?.routeEnd) {
+      const match = stops.find(s => s.name === subscription.bus!.routeEnd)
+      if (match) return match
+    }
+    // If subscription data includes a routeStart, the student may board there
+    // but their destination is more likely near routeEnd (handled above)
+    // Fall back to second-to-last stop (most students get off near destination)
+    if (stops.length >= 2) return stops[stops.length - 2]
+    return stops[stops.length - 1]
+  }, [stops, subscription])
 
   // Calculate ETA
   const eta = useMemo(() => {

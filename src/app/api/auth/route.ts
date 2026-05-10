@@ -22,6 +22,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
     }
 
+    // Validate role if provided
+    if (body.role && body.role !== user.role) {
+      return NextResponse.json({ error: 'Role mismatch' }, { status: 403 })
+    }
+
     // Build response based on role
     const { password: _, ...userWithoutPassword } = user
 

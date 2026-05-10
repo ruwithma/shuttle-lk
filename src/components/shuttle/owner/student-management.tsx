@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/hooks/use-toast'
+import { invalidateCache } from '@/lib/data-fetcher'
 import type { Subscription } from '@/lib/types'
 
 export default function StudentManagement() {
@@ -73,8 +74,8 @@ export default function StudentManagement() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
-          monthlyAmount: form.monthlyAmount ? parseInt(form.monthlyAmount) : null,
-          dailyAmount: form.dailyAmount ? parseInt(form.dailyAmount) : null,
+          monthlyAmount: form.monthlyAmount ? parseFloat(form.monthlyAmount) : null,
+          dailyAmount: form.dailyAmount ? parseFloat(form.dailyAmount) : null,
           ownerId: currentUser?.id,
         }),
       })
@@ -82,6 +83,7 @@ export default function StudentManagement() {
         toast({ title: 'Success', description: 'Student added' })
         setShowDialog(false)
         setForm({ name: '', phone: '', email: '', busId: '', paymentType: 'MONTHLY', monthlyAmount: '', dailyAmount: '' })
+        invalidateCache(currentUser?.role || '')
         loadStudents()
       } else {
         const data = await res.json()

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { toast } from '@/hooks/use-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, MapPin, Users, Bus as BusIcon, Clock, ChevronRight,
@@ -65,6 +66,7 @@ export default function ShuttleFinder() {
   const [usingLocation, setUsingLocation] = useState(false)
   const [liveBusesFromSocket, setLiveBusesFromSocket] = useState<Map<string, LiveBusFromSocket>>(new Map())
   const [showLiveMap, setShowLiveMap] = useState(false)
+  const [subscribing, setSubscribing] = useState(false)
 
   // Subscribe to all live buses for the real-time map
   useEffect(() => {
@@ -165,6 +167,42 @@ export default function ShuttleFinder() {
       { enableHighAccuracy: true, timeout: 5000 }
     )
   }, [query, fetchShuttles])
+
+  const handleSubscribe = useCallback(async () => {
+    if (!currentUser) {
+      toast({ title: 'Login Required', description: 'Please log in to subscribe', variant: 'destructive' })
+      return
+    }
+    if (currentUser.role !== 'STUDENT') {
+      toast({ title: 'Not Allowed', description: 'Only students can subscribe to shuttles', variant: 'destructive' })
+      return
+    }
+    if (!selectedShuttle) return
+
+    setSubscribing(true)
+    try {
+      const res = await fetch('/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: currentUser.id,
+          busId: selectedShuttle.id,
+          paymentType: 'MONTHLY',
+          monthlyAmount: selectedShuttle.priceRange.monthly?.min || 0,
+        }),
+      })
+      if (res.ok) {
+        toast({ title: 'Subscribed!', description: `You are now subscribed to ${selectedShuttle.name}` })
+      } else {
+        const data = await res.json()
+        toast({ title: 'Error', description: data.error || 'Failed to subscribe', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Network error. Please try again.', variant: 'destructive' })
+    } finally {
+      setSubscribing(false)
+    }
+  }, [currentUser, selectedShuttle])
 
   // Build fleet buses for live map view
   const liveFleetBuses = useMemo(() => {
@@ -566,9 +604,17 @@ export default function ShuttleFinder() {
                 )}
 
                 {/* Subscribe Button */}
-                <Button className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
-                  <Star className="w-4 h-4 mr-2" />
-                  Subscribe to This Shuttle
+                <Button
+                  className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                  disabled={subscribing}
+                  onClick={handleSubscribe}
+                >
+                  {subscribing ? (
+                    <span className="w-4 h-4 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Star className="w-4 h-4 mr-2" />
+                  )}
+                  {subscribing ? 'Subscribing...' : 'Subscribe to This Shuttle'}
                 </Button>
               </CardContent>
             </Card>

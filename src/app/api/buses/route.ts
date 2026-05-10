@@ -86,7 +86,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json()
-    const { id, ...fieldsToUpdate } = body
+    const { id } = body
 
     if (!id) {
       return NextResponse.json({ error: 'Bus id is required' }, { status: 400 })
@@ -97,9 +97,18 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Bus not found' }, { status: 404 })
     }
 
+    // Whitelist allowed fields
+    const allowedFields = ['name', 'plateNumber', 'capacity', 'routeName', 'routeStart', 'routeEnd', 'routeStops', 'driverId'] as const
+    const fieldsToUpdate: Record<string, unknown> = {}
+    for (const field of allowedFields) {
+      if (body[field] !== undefined) {
+        fieldsToUpdate[field] = body[field]
+      }
+    }
+
     // If updating driverId, check that driver is not already assigned to another bus
     if (fieldsToUpdate.driverId) {
-      const driverBus = await db.bus.findUnique({ where: { driverId: fieldsToUpdate.driverId } })
+      const driverBus = await db.bus.findUnique({ where: { driverId: fieldsToUpdate.driverId as string } })
       if (driverBus && driverBus.id !== id) {
         return NextResponse.json({ error: 'Driver is already assigned to another bus' }, { status: 409 })
       }
@@ -107,7 +116,7 @@ export async function PUT(request: Request) {
 
     // If updating plateNumber, check uniqueness
     if (fieldsToUpdate.plateNumber && fieldsToUpdate.plateNumber !== existingBus.plateNumber) {
-      const plateBus = await db.bus.findUnique({ where: { plateNumber: fieldsToUpdate.plateNumber } })
+      const plateBus = await db.bus.findUnique({ where: { plateNumber: fieldsToUpdate.plateNumber as string } })
       if (plateBus) {
         return NextResponse.json({ error: 'Bus with this plate number already exists' }, { status: 409 })
       }
@@ -152,6 +161,10 @@ export async function DELETE(request: Request) {
       await tx.expense.deleteMany({ where: { busId: id } })
       // Delete subscriptions for this bus
       await tx.subscription.deleteMany({ where: { busId: id } })
+      // Delete bus locations for this bus
+      await tx.busLocation.deleteMany({ where: { busId: id } })
+      // Delete routes for this bus
+      await tx.route.deleteMany({ where: { busId: id } })
       // Delete the bus
       await tx.bus.delete({ where: { id } })
     })

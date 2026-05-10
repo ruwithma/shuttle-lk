@@ -90,6 +90,14 @@ export async function POST(request: Request) {
       )
     }
 
+    // Validate amount is a positive number
+    if (typeof amount !== 'number' || amount <= 0) {
+      return NextResponse.json(
+        { error: 'Amount must be a positive number' },
+        { status: 400 }
+      )
+    }
+
     // Validate references exist
     const student = await db.user.findUnique({ where: { id: studentId } })
     if (!student) {
@@ -106,19 +114,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Collector not found' }, { status: 404 })
     }
 
+    // For monthly payments, auto-populate month if not provided
+    let effectiveMonth = month
+    if (paymentType === 'MONTHLY' && !month) {
+      const now = new Date()
+      effectiveMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    }
+
     // For monthly payments, check if already paid for this month
-    if (paymentType === 'MONTHLY' && month) {
+    if (paymentType === 'MONTHLY' && effectiveMonth) {
       const existingPayment = await db.payment.findFirst({
         where: {
           studentId,
           busId,
           paymentType: 'MONTHLY',
-          month,
+          month: effectiveMonth,
         },
       })
       if (existingPayment) {
         return NextResponse.json(
-          { error: `Student has already paid for month ${month}` },
+          { error: `Student has already paid for month ${effectiveMonth}` },
           { status: 409 }
         )
       }
@@ -135,7 +150,7 @@ export async function POST(request: Request) {
         collectedById,
         date: date ? new Date(date) : new Date(),
         note: note || null,
-        month: month || null,
+        month: effectiveMonth || null,
       },
       include: {
         student: { select: { id: true, name: true, phone: true } },
@@ -146,7 +161,7 @@ export async function POST(request: Request) {
 
     // If this is a monthly payment, create a notification for the student
     if (paymentType === 'MONTHLY') {
-      const monthLabel = month || 'this month'
+      const monthLabel = effectiveMonth || 'this month'
       await db.notification.create({
         data: {
           userId: studentId,

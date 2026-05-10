@@ -14,9 +14,8 @@ import StatCard from '@/components/shuttle/shared/stat-card'
 import RefreshIndicator from '@/components/shuttle/shared/refresh-indicator'
 import { useFleetLocations } from '@/components/shuttle/shared/bus-location-hook'
 import { format } from 'date-fns'
+import { formatLKR } from '@/lib/utils'
 import type { DashboardStats } from '@/lib/types'
-
-const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
 export default function OwnerDashboard() {
   const { currentUser, dashboardStats, setDashboardStats, setActiveTab, buses } = useAppStore()

@@ -12,9 +12,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import RefreshIndicator from '@/components/shuttle/shared/refresh-indicator'
 import { format } from 'date-fns'
+import { formatLKR } from '@/lib/utils'
 import type { DriverDashboard as DriverDashboardType } from '@/lib/types'
-
-const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
 export default function DriverDashboard() {
   const { currentUser, driverDashboard, setDriverDashboard, isDriverLive, setIsDriverLive } = useAppStore()
@@ -267,14 +266,16 @@ export default function DriverDashboard() {
     setCurrentHeading(null)
   }, [stopDemoSimulation, setIsDriverLive])
 
-  // Cleanup on unmount
+  // Cleanup on unmount - stop live tracking and demo mode
   useEffect(() => {
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
       }
+      stopDemoMode()
+      stopLive()
     }
-  }, [])
+  }, [stopDemoMode, stopLive])
 
   if (loading) {
     return (

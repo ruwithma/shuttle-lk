@@ -42,24 +42,6 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
     })
 
-    // Group by student
-    const studentMap = new Map<string, {
-      student: typeof subscriptions[0]['student']
-      subscriptions: typeof subscriptions
-    }>()
-
-    for (const sub of subscriptions) {
-      const existing = studentMap.get(sub.studentId)
-      if (existing) {
-        existing.subscriptions.push(sub)
-      } else {
-        studentMap.set(sub.studentId, {
-          student: sub.student,
-          subscriptions: [sub],
-        })
-      }
-    }
-
     // Return flat subscriptions array for frontend compatibility
     return NextResponse.json(subscriptions, { status: 200 })
   } catch (error) {
@@ -73,6 +55,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const {
+      studentId, // For existing student subscribing
       name,
       phone,
       email,
@@ -85,20 +68,58 @@ export async function POST(request: Request) {
       startDate,
     } = body
 
-    if (!name || !phone || !busId || !paymentType) {
-      return NextResponse.json({ error: 'name, phone, busId, and paymentType are required' }, { status: 400 })
-    }
-
-    // Check if phone already exists
-    const existingUser = await db.user.findUnique({ where: { phone } })
-    if (existingUser) {
-      return NextResponse.json({ error: 'User with this phone number already exists' }, { status: 409 })
+    if (!busId || !paymentType) {
+      return NextResponse.json({ error: 'busId and paymentType are required' }, { status: 400 })
     }
 
     // Check if bus exists
     const bus = await db.bus.findUnique({ where: { id: busId } })
     if (!bus) {
       return NextResponse.json({ error: 'Bus not found' }, { status: 404 })
+    }
+
+    // Mode 1: Existing student subscribing to a shuttle
+    if (studentId) {
+      const existingStudent = await db.user.findUnique({ where: { id: studentId } })
+      if (!existingStudent || existingStudent.role !== 'STUDENT') {
+        return NextResponse.json({ error: 'Student not found' }, { status: 404 })
+      }
+
+      // Check if already subscribed
+      const existingSub = await db.subscription.findFirst({
+        where: { studentId, busId, active: true },
+      })
+      if (existingSub) {
+        return NextResponse.json({ error: 'Already subscribed to this shuttle' }, { status: 409 })
+      }
+
+      const subscription = await db.subscription.create({
+        data: {
+          studentId,
+          busId,
+          paymentType,
+          monthlyAmount: paymentType === 'MONTHLY' ? (monthlyAmount || null) : null,
+          dailyAmount: paymentType === 'DAILY' ? (dailyAmount || null) : null,
+          startDate: new Date(),
+          active: true,
+        },
+        include: {
+          bus: { select: { id: true, name: true, plateNumber: true, routeName: true } },
+        },
+      })
+
+      return NextResponse.json({ subscription }, { status: 201 })
+    }
+
+    // Mode 2: Owner adding a new student
+    if (!name || !phone) {
+      return NextResponse.json({ error: 'name and phone are required for new students' }, { status: 400 })
+    }
+
+    // Check if phone already exists
+    const existingUser = await db.user.findUnique({ where: { phone } })
+    if (existingUser) {
+      return NextResponse.json({ error: 'User with this phone number already exists' }, { status: 409 })
     }
 
     const result = await db.$transaction(async (tx) => {

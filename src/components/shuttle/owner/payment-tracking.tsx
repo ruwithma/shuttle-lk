@@ -24,10 +24,10 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/hooks/use-toast'
+import { invalidateCache } from '@/lib/data-fetcher'
 import { format } from 'date-fns'
+import { formatLKR } from '@/lib/utils'
 import type { Payment } from '@/lib/types'
-
-const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
 
 const methodBadge = (method: string) => {
   if (method === 'CASH') return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
@@ -87,7 +87,8 @@ export default function PaymentTracking() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
-          amount: parseInt(form.amount),
+          amount: parseFloat(form.amount),
+          subscriptionId: sub?.id,
           busId: sub?.busId || '',
           collectedById: currentUser?.id,
           month: form.paymentType === 'MONTHLY' ? format(new Date(form.date), 'yyyy-MM') : undefined,
@@ -97,6 +98,7 @@ export default function PaymentTracking() {
         toast({ title: 'Success', description: 'Payment recorded' })
         setShowDialog(false)
         setForm({ studentId: '', amount: '', paymentMethod: 'CASH', paymentType: 'MONTHLY', date: format(new Date(), 'yyyy-MM-dd'), note: '' })
+        invalidateCache(currentUser?.role || '')
         loadPayments()
       } else {
         const data = await res.json()

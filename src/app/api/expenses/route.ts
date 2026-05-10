@@ -12,7 +12,6 @@ export async function GET(request: Request) {
 
     const where: Record<string, unknown> = {}
 
-    if (busId) where.busId = busId
     if (category) where.category = category
 
     // Filter by owner's buses
@@ -22,7 +21,14 @@ export async function GET(request: Request) {
         select: { id: true },
       })
       const busIds = ownedBuses.map(b => b.id)
-      where.busId = { in: busIds }
+      // If busId also provided, intersect: only include busId if it belongs to the owner
+      if (busId) {
+        where.busId = busIds.includes(busId) ? busId : '___none___'
+      } else {
+        where.busId = { in: busIds }
+      }
+    } else if (busId) {
+      where.busId = busId
     }
 
     if (month) {
@@ -68,6 +74,14 @@ export async function POST(request: Request) {
     if (!busId || !category || !amount || !recordedById) {
       return NextResponse.json(
         { error: 'busId, category, amount, and recordedById are required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate amount is a positive number
+    if (typeof amount !== 'number' || amount <= 0) {
+      return NextResponse.json(
+        { error: 'Amount must be a positive number' },
         { status: 400 }
       )
     }

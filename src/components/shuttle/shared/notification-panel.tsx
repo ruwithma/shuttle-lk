@@ -50,8 +50,8 @@ export default function NotificationPanel() {
         body: JSON.stringify({ id: notifId }),
       })
       if (res.ok) {
-        setNotifications(
-          notifications.map((n: Notification) =>
+        setNotifications(prev =>
+          prev.map((n: Notification) =>
             n.id === notifId ? { ...n, read: true } : n
           )
         )
@@ -62,12 +62,17 @@ export default function NotificationPanel() {
   }
 
   const markAllRead = async () => {
+    if (!currentUser) return
     try {
-      const unreadIds = notifications.filter((n: Notification) => !n.read).map((n: Notification) => n.id)
-      for (const id of unreadIds) {
-        await markAsRead(id)
+      const res = await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id }),
+      })
+      if (res.ok) {
+        setNotifications(prev => prev.map((n: Notification) => ({ ...n, read: true })))
+        toast({ title: 'Done', description: 'All notifications marked as read' })
       }
-      toast({ title: 'Done', description: 'All notifications marked as read' })
     } catch {
       // silently fail
     }

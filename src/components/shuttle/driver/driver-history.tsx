@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import type { Payment } from '@/lib/types'
 import { motion } from 'framer-motion'
 import { History, CalendarDays } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
@@ -8,12 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { format } from 'date-fns'
-import type { Payment } from '@/lib/types'
-
-const formatLKR = (amount: number) => `Rs. ${amount.toLocaleString()}`
+import { formatLKR } from '@/lib/utils'
 
 export default function DriverHistory() {
-  const { currentUser, payments, setPayments } = useAppStore()
+  const { currentUser } = useAppStore()
+  const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')

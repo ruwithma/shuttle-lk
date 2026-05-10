@@ -158,15 +158,10 @@ export default function ShuttleMap({
 
   // ─── Refs for accessing latest values in effects without triggering re-runs ───
   const isDarkRef = useRef(isDark)
-  isDarkRef.current = isDark
-  const routeGeoJSONRef = useRef(routeGeoJSON)
-  routeGeoJSONRef.current = routeGeoJSON
-  const traveledGeoJSONRef = useRef(traveledGeoJSON)
-  traveledGeoJSONRef.current = traveledGeoJSON
-  const trailGeoJSONRef = useRef(trailGeoJSON)
-  trailGeoJSONRef.current = trailGeoJSON
+  const routeGeoJSONRef = useRef<{ type: 'Feature'; properties: Record<string, unknown>; geometry: { type: 'LineString'; coordinates: [number, number][] } } | null>(null)
+  const traveledGeoJSONRef = useRef<{ type: 'Feature'; properties: Record<string, unknown>; geometry: { type: 'LineString'; coordinates: [number, number][] } } | null>(null)
+  const trailGeoJSONRef = useRef<{ type: 'Feature'; properties: Record<string, unknown>; geometry: { type: 'LineString'; coordinates: [number, number][] } } | null>(null)
   const displayPositionRef = useRef(displayPosition)
-  displayPositionRef.current = displayPosition
 
   // ─── Helper: Remove markers by type ──────────────────────────────────────
 
@@ -345,6 +340,15 @@ export default function ShuttleMap({
       },
     }
   }, [trail])
+
+  // Keep refs in sync with memoized values (must be after useMemo declarations)
+  useEffect(() => {
+    isDarkRef.current = isDark
+    displayPositionRef.current = displayPosition
+    routeGeoJSONRef.current = routeGeoJSON
+    traveledGeoJSONRef.current = traveledGeoJSON
+    trailGeoJSONRef.current = trailGeoJSON
+  })
 
   // ─── Initialize map ───────────────────────────────────────────────────────
 
