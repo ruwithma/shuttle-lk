@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { useTheme } from 'next-themes'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -64,14 +65,14 @@ function injectRequiredCSS() {
   if (cssInjected) return
   cssInjected = true
 
-  // Leaflet CSS
-  if (!document.getElementById('leaflet-css')) {
-    const link = document.createElement('link')
-    link.id = 'leaflet-css'
-    link.rel = 'stylesheet'
-    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-    document.head.appendChild(link)
-  }
+  // Fix Leaflet default icon issue (markers show broken images without this)
+  // @ts-expect-error Leaflet internal icon paths
+  delete L.Icon.Default.prototype._getIconUrl
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  })
 
   // Animation keyframes and marker styles
   if (!document.getElementById('shuttle-map-keyframes')) {
@@ -550,9 +551,11 @@ export default function ShuttleMap({
   const isDark = darkModeProp ?? resolvedTheme === 'dark'
   const displayPosition = interpolatedPosition || busLocation
 
-  // Inject CSS on mount
+  // Inject CSS and fix icons on mount
+  const [cssReady, setCssReady] = useState(false)
   useEffect(() => {
     injectRequiredCSS()
+    setCssReady(true)
   }, [])
 
   // Compute traveled portion of the route
@@ -602,6 +605,14 @@ export default function ShuttleMap({
       '#10b981'
     )
   }, [showLiveBus, displayPosition, busLocation?.heading, busLocation?.speed])
+
+  if (!cssReady) {
+    return (
+      <div className={`h-full w-full rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse flex items-center justify-center ${className ?? ''}`} style={{ minHeight: 250 }}>
+        <span className="text-sm text-muted-foreground">Loading map...</span>
+      </div>
+    )
+  }
 
   try {
     return (
