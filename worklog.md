@@ -70,3 +70,28 @@ Stage Summary:
 - Stop markers no longer accidentally remove bus/fleet markers
 - Dark mode text contrast significantly improved across all views
 - Marker management is now type-safe and granular
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix mapping system issues - theme change flickering, route layer efficiency, fleet markers, coordinate handling
+
+Work Log:
+- Analyzed all 17+ map-related source files in the ShuttleLK project
+- Identified 6 critical bugs in the mapping system
+- Fixed shuttle-map.tsx: Theme change effect was depending on `displayPosition`, causing `setStyle()` on every bus location update → map flickering. Now only depends on `isDark`, uses refs for data access.
+- Fixed shuttle-map.tsx: Route layers were being removed and re-added on every data change. Now uses `source.setData()` for efficient GeoJSON updates without removing layers.
+- Fixed shuttle-map.tsx: Fleet markers were being removed and re-created on every location update, causing flickering. Now updates existing marker positions instead.
+- Fixed bus-location-hook.ts: Interpolation loop was restarting on every `location` state change, causing frame drops. Now the loop runs continuously based on `activeBusId`, and interpolation refs are updated without restarting the loop.
+- Fixed coordinate parsing across all components: Changed the fragile `> 90` heuristic to `> 50 && < 180` for detecting longitude values, which is more robust for Sri Lanka coordinates (lat ~6-10, lng ~79-82).
+- Fixed fleet-tracking.tsx: Color assignment was using `locations.indexOf(loc)` which is unstable. Now uses a hash-based stable color assignment based on busId.
+- Added `isStyleChangingRef` guard to prevent redundant layer updates during theme transitions.
+- Increased trail buffer from 30 to 50 points for better route history visibility.
+
+Stage Summary:
+- shuttle-map.tsx: 3 critical fixes (theme flickering, efficient data updates, fleet marker efficiency)
+- bus-location-hook.ts: 1 critical fix (interpolation loop stability)
+- fleet-tracking.tsx: 2 fixes (stable colors, better coordinate parsing)
+- student/my-route.tsx: 1 fix (coordinate parsing)
+- shuttle-finder.tsx: 1 fix (coordinate parsing)
+- driver/route-recorder.tsx: 1 fix (coordinate parsing)
+- All lint checks pass (only spawner.js unrelated errors remain)

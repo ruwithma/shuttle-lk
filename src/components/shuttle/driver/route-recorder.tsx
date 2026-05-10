@@ -271,11 +271,12 @@ export default function RouteRecorder() {
       if (res.ok) {
         const data = await res.json()
         if (data.coordinates && data.coordinates.length > 1) {
-          // API returns [lng, lat] but we store [lat, lng]
+          // /api/routing returns [lat, lng] pairs (osrm-routing.ts converts from OSRM's [lng, lat])
+          // Our internal convention is [lat, lng]
           const snappedCoords: [number, number][] = data.coordinates.map(
             (c: [number, number]) => {
-              // If first value > 90, it's longitude
-              if (c[0] > 90) return [c[1], c[0]] as [number, number]
+              // If first value > 50, it's longitude — swap to [lat, lng]
+              if (c[0] > 50 && c[0] < 180) return [c[1], c[0]] as [number, number]
               return [c[0], c[1]] as [number, number]
             }
           )

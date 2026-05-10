@@ -91,29 +91,32 @@ export default function MyRoute() {
   const { location, isLive, trail, connected, interpolatedPosition } = useBusLocation(bus?.id ?? null)
 
   // Parse route coordinates - prefer recorded route data
+  // Bus.routeCoordinates stores [lat, lng] pairs
+  // Route.coordinates stores [lng, lat] pairs (MapLibre convention)
   const routePath = useMemo<[number, number][]>(() => {
     // Try recorded route first (coordinates are stored as [lng, lat] for MapLibre)
     if (routeData?.coordinates) {
       try {
         const coords = JSON.parse(routeData.coordinates)
         if (Array.isArray(coords) && coords.length > 0) {
-          return coords.map((c: [number, number]) => [c[1], c[0]] as [number, number]) // Convert [lng, lat] to [lat, lng]
+          // Route.coordinates are stored as [lng, lat] — swap to [lat, lng]
+          return coords.map((c: [number, number]) => {
+            // If first value > 50, it's longitude — swap
+            if (c[0] > 50 && c[0] < 180) return [c[1], c[0]] as [number, number]
+            return [c[0], c[1]] as [number, number]
+          })
         }
       } catch {}
     }
-    // Fallback to bus route coordinates
+    // Fallback to bus route coordinates (stored as [lat, lng])
     try {
       const coords = JSON.parse(bus?.routeCoordinates || '[]')
       if (Array.isArray(coords) && coords.length > 0) {
-        // Check if coordinates are [lng, lat] (from recorded route) or [lat, lng] (from seed data)
-        const firstCoord = coords[0]
-        if (Array.isArray(firstCoord)) {
-          // If first value > 90, it's likely longitude (Sri Lanka lng ~80, lat ~7)
-          if (firstCoord[0] > 90) {
-            return coords.map((c: [number, number]) => [c[1], c[0]] as [number, number])
-          }
-          return coords.map((c: [number, number]) => [c[0], c[1]] as [number, number])
-        }
+        return coords.map((c: [number, number]) => {
+          // If first value > 50, it's longitude — swap to [lat, lng]
+          if (c[0] > 50 && c[0] < 180) return [c[1], c[0]] as [number, number]
+          return [c[0], c[1]] as [number, number]
+        })
       }
     } catch {}
     return []
@@ -141,8 +144,8 @@ export default function MyRoute() {
       if (typeof stopCoords === 'object' && Object.keys(stopCoords).length > 0) {
         return Object.entries(stopCoords).map(([name, coord]) => {
           const c = coord as [number, number]
-          // Handle both [lat, lng] and [lng, lat] formats
-          const isLngFirst = c[0] > 90
+          // If first value > 50, it's longitude — swap
+          const isLngFirst = c[0] > 50 && c[0] < 180
           return {
             name,
             lat: isLngFirst ? c[1] : c[0],

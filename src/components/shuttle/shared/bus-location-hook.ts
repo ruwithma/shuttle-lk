@@ -26,7 +26,7 @@ interface UseBusLocationReturn {
 }
 
 // Interpolation: smoothly move between GPS updates
-const INTERPOLATION_INTERVAL = 50 // ms between interpolation frames
+const INTERPOLATION_DURATION = 2000 // ms to interpolate between updates
 
 export function useBusLocation(busId: string | null | undefined): UseBusLocationReturn {
   const { getSocket, connected } = useSharedSocket()
@@ -84,9 +84,10 @@ export function useBusLocation(busId: string | null | undefined): UseBusLocation
     return () => { cancelled = true }
   }, [activeBusId])
 
-  // Interpolation loop for smooth movement
+  // Interpolation loop — runs continuously, not restarted on every location update
+  // FIX: Start the loop once when activeBusId is set, stop when it changes
   useEffect(() => {
-    if (!location) return
+    if (!activeBusId) return
 
     const animate = () => {
       const interp = interpRef.current
@@ -109,7 +110,7 @@ export function useBusLocation(busId: string | null | undefined): UseBusLocation
         cancelAnimationFrame(interpFrameRef.current)
       }
     }
-  }, [location])
+  }, [activeBusId])
 
   // Subscribe/unsubscribe to socket room
   useEffect(() => {
@@ -167,7 +168,6 @@ export function useBusLocation(busId: string | null | undefined): UseBusLocation
         }
 
         // Set up interpolation from current displayed position to new position
-        // Use refs to avoid stale closure issues
         const currentInterp = interpPosRef.current || locationRef.current
         if (currentInterp) {
           const dist = Math.sqrt(
@@ -183,6 +183,9 @@ export function useBusLocation(busId: string | null | undefined): UseBusLocation
             startTime: performance.now(),
             duration,
           }
+        } else {
+          // No current position, set directly
+          setInterpolatedPosition({ lat: newLoc.lat, lng: newLoc.lng })
         }
 
         setLocation(newLoc)
@@ -193,7 +196,7 @@ export function useBusLocation(busId: string | null | undefined): UseBusLocation
             ...prev,
             { lat: data.lat, lng: data.lng, timestamp: data.timestamp },
           ]
-          return newTrail.length > 30 ? newTrail.slice(-30) : newTrail
+          return newTrail.length > 50 ? newTrail.slice(-50) : newTrail
         })
       }
     }
@@ -242,8 +245,6 @@ export function useFleetLocations(ownerId: string | null | undefined) {
       .then((data) => {
         if (cancelled || !data) return
         if (data.locations && Array.isArray(data.locations)) {
-          // Include ALL buses, even those with 0,0 coordinates
-          // They may get valid coordinates later via WebSocket
           setLocations(data.locations)
         }
       })
@@ -280,7 +281,6 @@ export function useFleetLocations(ownerId: string | null | undefined) {
       setLocations((prev) => {
         const existingIdx = prev.findIndex((loc) => loc.busId === data.busId)
         if (existingIdx >= 0) {
-          // Update existing bus location
           return prev.map((loc, idx) =>
             idx === existingIdx
               ? {
@@ -295,7 +295,6 @@ export function useFleetLocations(ownerId: string | null | undefined) {
               : loc
           )
         } else {
-          // Bus not in our list yet - add it (driver just went live)
           return [
             ...prev,
             {
@@ -325,7 +324,6 @@ export function useFleetLocations(ownerId: string | null | undefined) {
               : loc
           )
         } else {
-          // New bus not in our initial list - add it
           return [
             ...prev,
             {

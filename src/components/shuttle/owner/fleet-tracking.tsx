@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bus as BusIcon, MapPin, ChevronLeft, Navigation } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
@@ -32,17 +32,23 @@ export default function FleetTracking() {
   }, [currentUser, buses.length])
 
   // Parse route paths from bus data
+  // Bus.routeCoordinates stores [lat, lng] pairs (seed data convention)
+  // Route.coordinates stores [lng, lat] pairs (MapLibre convention)
+  // Helper to normalize any coordinate pair to [lat, lng]
+  const normalizeToLatLng = (c: [number, number]): [number, number] => {
+    // Sri Lanka: lat ~6-10, lng ~79-82
+    // If first value is in longitude range (> 50), swap it
+    if (c[0] > 50 && c[0] < 180) return [c[1], c[0]]
+    return c
+  }
+
   const busRoutePaths = useMemo(() => {
     const paths: Record<string, [number, number][]> = {}
     buses.forEach(bus => {
       try {
         const coords = JSON.parse(bus.routeCoordinates || '[]')
         if (Array.isArray(coords) && coords.length > 1) {
-          paths[bus.id] = coords.map((c: [number, number]) => {
-            // If first value > 90, it's likely longitude, so swap
-            if (c[0] > 90) return [c[1], c[0]] as [number, number]
-            return [c[0], c[1]] as [number, number]
-          })
+          paths[bus.id] = coords.map((c: [number, number]) => normalizeToLatLng(c))
         }
       } catch {
         // ignore parse errors
@@ -51,8 +57,16 @@ export default function FleetTracking() {
     return paths
   }, [buses])
 
-  // Fleet buses for map display - include ALL buses, even those with 0,0 coords
-  // The map will handle them gracefully (they just won't appear visually)
+  // Stable color assignment based on busId (not array index which changes)
+  const getBusColor = useCallback((busId: string) => {
+    let hash = 0
+    for (let i = 0; i < busId.length; i++) {
+      hash = busId.charCodeAt(i) + ((hash << 5) - hash)
+    }
+    return BUS_COLORS[Math.abs(hash) % BUS_COLORS.length]
+  }, [])
+
+  // Fleet buses for map display - include buses with valid coordinates
   const fleetBuses = useMemo(() => {
     if (!locations || locations.length === 0) return []
     return locations
@@ -69,9 +83,9 @@ export default function FleetTracking() {
         lastUpdate: loc.timestamp
           ? formatDistanceToNow(new Date(loc.timestamp), { addSuffix: true })
           : undefined,
-        color: BUS_COLORS[locations.indexOf(loc) % BUS_COLORS.length],
+        color: getBusColor(loc.busId),
       }))
-  }, [locations])
+  }, [locations, getBusColor])
 
   // Selected bus route path
   const selectedRoutePath = selectedBusId ? busRoutePaths[selectedBusId] || null : null
@@ -88,12 +102,11 @@ export default function FleetTracking() {
       if (typeof stopCoords === 'object' && !Array.isArray(stopCoords) && Object.keys(stopCoords).length > 0) {
         return Object.entries(stopCoords).map(([name, coord], idx) => {
           const c = coord as [number, number]
-          // Handle both [lat, lng] and [lng, lat] formats
-          const isLngFirst = c[0] > 90
+          const normalized = normalizeToLatLng(c)
           return {
             name,
-            lat: isLngFirst ? c[1] : c[0],
-            lng: isLngFirst ? c[0] : c[1],
+            lat: normalized[0],
+            lng: normalized[1],
             estimatedMinutes: undefined,
           }
         })
@@ -306,7 +319,7 @@ export default function FleetTracking() {
                 {locations
                   .filter(loc => !selectedBusId || loc.busId !== selectedBusId)
                   .map((loc) => {
-                  const busColor = BUS_COLORS[locations.indexOf(loc) % BUS_COLORS.length]
+                  const busColor = getBusColor(loc.busId)
                   const isSelected = selectedBusId === loc.busId
                   return (
                     <div

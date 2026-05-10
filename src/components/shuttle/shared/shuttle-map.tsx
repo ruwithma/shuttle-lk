@@ -148,9 +148,21 @@ export default function ShuttleMap({
   const animFrameRef = useRef<number>(0)
   const markerPosRef = useRef<{ lat: number; lng: number } | null>(null)
   const initializedRef = useRef(false)
-  const styleVersionRef = useRef(0) // Track style changes for knowing when to re-add layers
+  const isStyleChangingRef = useRef(false) // Guard against redundant layer updates during style change
 
   const displayPosition = interpolatedPosition || busLocation
+
+  // ─── Refs for accessing latest values in effects without triggering re-runs ───
+  const isDarkRef = useRef(isDark)
+  isDarkRef.current = isDark
+  const routeGeoJSONRef = useRef(routeGeoJSON)
+  routeGeoJSONRef.current = routeGeoJSON
+  const traveledGeoJSONRef = useRef(traveledGeoJSON)
+  traveledGeoJSONRef.current = traveledGeoJSON
+  const trailGeoJSONRef = useRef(trailGeoJSON)
+  trailGeoJSONRef.current = trailGeoJSON
+  const displayPositionRef = useRef(displayPosition)
+  displayPositionRef.current = displayPosition
 
   // ─── Helper: Remove markers by type ──────────────────────────────────────
 
@@ -375,7 +387,8 @@ export default function ShuttleMap({
   }, []) // Only init once
 
   // ─── Update map style on theme change ─────────────────────────────────────
-  // CRITICAL FIX: After style change, re-add ALL layers/sources and markers
+  // FIX: Only depend on isDark. Use refs for current data to avoid re-triggering
+  // on every bus location update (which was causing map flickering).
 
   useEffect(() => {
     const map = mapRef.current
@@ -384,21 +397,24 @@ export default function ShuttleMap({
     const currentCenter = map.getCenter()
     const currentZoom = map.getZoom()
 
-    // Increment version to track style change
-    styleVersionRef.current++
+    isStyleChangingRef.current = true
 
     map.setStyle(isDark ? DARK_STYLE : LIGHT_STYLE)
 
     map.once('style.load', () => {
-      // Restore position
       map.setCenter(currentCenter)
       map.setZoom(currentZoom)
 
-      // Re-add all layers and sources
-      addAllLayersToMap(map, routeGeoJSON, traveledGeoJSON, trailGeoJSON, !!displayPosition)
+      // Use refs for current data (avoids stale closures while keeping dep array minimal)
+      addAllLayersToMap(
+        map,
+        routeGeoJSONRef.current,
+        traveledGeoJSONRef.current,
+        trailGeoJSONRef.current,
+        !!displayPositionRef.current
+      )
 
-      // Re-add all markers (stop, bus, fleet) - they survive style changes as DOM elements
-      // but need to be re-attached to the map
+      // Re-add all markers
       trackedMarkersRef.current.forEach(tm => {
         try {
           tm.marker.addTo(map)
@@ -406,32 +422,116 @@ export default function ShuttleMap({
           // Marker may already be on map
         }
       })
-    })
-  }, [isDark, addAllLayersToMap, routeGeoJSON, traveledGeoJSON, trailGeoJSON, displayPosition])
 
-  // ─── Update route layers ──────────────────────────────────────────────────
+      isStyleChangingRef.current = false
+    })
+  }, [isDark]) // Intentionally only depend on isDark — data is accessed via refs
+
+  // ─── Update route GeoJSON data (efficient setData) ────────────────────────
+  // FIX: Use source.setData() instead of removing/re-adding layers on every update
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !initializedRef.current) return
+    if (!map || !initializedRef.current || isStyleChangingRef.current) return
 
-    const updateLayers = () => {
-      addAllLayersToMap(map, routeGeoJSON, traveledGeoJSON, trailGeoJSON, !!displayPosition)
+    const updateData = () => {
+      const hasBus = !!displayPosition
+
+      // --- Route source ---
+      const routeSource = map.getSource('route-source') as maplibregl.GeoJSONSource | undefined
+      if (routeSource && routeGeoJSON) {
+        // Update existing source data (no flicker)
+        routeSource.setData(routeGeoJSON)
+
+        // Handle route-dash layer visibility
+        try {
+          const hasDashLayer = !!map.getLayer('route-dash')
+          if (hasBus && hasDashLayer) {
+            map.removeLayer('route-dash')
+          } else if (!hasBus && !hasDashLayer) {
+            map.addLayer({
+              id: 'route-dash',
+              type: 'line',
+              source: 'route-source',
+              layout: { 'line-join': 'round', 'line-cap': 'round' },
+              paint: {
+                'line-color': '#10b981',
+                'line-width': 4,
+                'line-opacity': 0.9,
+              },
+            })
+          }
+        } catch {}
+      } else if (!routeSource && routeGeoJSON) {
+        // Source doesn't exist yet — add all layers
+        addAllLayersToMap(map, routeGeoJSON, traveledGeoJSON, trailGeoJSON, hasBus)
+        return // All data set up in one call
+      } else if (routeSource && !routeGeoJSON) {
+        // Remove route layers if no data
+        try { if (map.getLayer('route-glow')) map.removeLayer('route-glow') } catch {}
+        try { if (map.getLayer('route-line')) map.removeLayer('route-line') } catch {}
+        try { if (map.getLayer('route-dash')) map.removeLayer('route-dash') } catch {}
+        try { map.removeSource('route-source') } catch {}
+      }
+
+      // --- Traveled source ---
+      const traveledSource = map.getSource('route-traveled-source') as maplibregl.GeoJSONSource | undefined
+      if (traveledSource && traveledGeoJSON) {
+        traveledSource.setData(traveledGeoJSON)
+      } else if (!traveledSource && traveledGeoJSON) {
+        // Need to add traveled layers
+        map.addSource('route-traveled-source', { type: 'geojson', data: traveledGeoJSON })
+        map.addLayer({
+          id: 'route-traveled-glow',
+          type: 'line',
+          source: 'route-traveled-source',
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: { 'line-color': '#10b981', 'line-width': 10, 'line-opacity': 0.25, 'line-blur': 4 },
+        })
+        map.addLayer({
+          id: 'route-traveled',
+          type: 'line',
+          source: 'route-traveled-source',
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: { 'line-color': '#10b981', 'line-width': 5, 'line-opacity': 1 },
+        })
+      } else if (traveledSource && !traveledGeoJSON) {
+        try { if (map.getLayer('route-traveled-glow')) map.removeLayer('route-traveled-glow') } catch {}
+        try { if (map.getLayer('route-traveled')) map.removeLayer('route-traveled') } catch {}
+        try { map.removeSource('route-traveled-source') } catch {}
+      }
+
+      // --- Trail source ---
+      const trailSource = map.getSource('trail-source') as maplibregl.GeoJSONSource | undefined
+      if (trailSource && trailGeoJSON) {
+        trailSource.setData(trailGeoJSON)
+      } else if (!trailSource && trailGeoJSON) {
+        map.addSource('trail-source', { type: 'geojson', data: trailGeoJSON })
+        map.addLayer({
+          id: 'trail-line',
+          type: 'line',
+          source: 'trail-source',
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: { 'line-color': '#10b981', 'line-width': 3, 'line-opacity': 0.25 },
+        })
+      } else if (trailSource && !trailGeoJSON) {
+        try { if (map.getLayer('trail-line')) map.removeLayer('trail-line') } catch {}
+        try { map.removeSource('trail-source') } catch {}
+      }
     }
 
     if (map.isStyleLoaded()) {
-      updateLayers()
+      updateData()
     } else {
-      map.once('style.load', updateLayers)
+      map.once('style.load', updateData)
     }
-  }, [routeGeoJSON, traveledGeoJSON, trailGeoJSON, displayPosition, isDark, addAllLayersToMap])
+  }, [routeGeoJSON, traveledGeoJSON, trailGeoJSON, displayPosition, addAllLayersToMap])
 
   // ─── Stop Markers ─────────────────────────────────────────────────────────
-  // FIX: Only remove stop markers, not bus/fleet markers
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !initializedRef.current) return
+    if (!map || !initializedRef.current || isStyleChangingRef.current) return
 
     const updateStops = () => {
       // Only remove stop markers
@@ -493,7 +593,7 @@ export default function ShuttleMap({
             top: ${size + 4}px;
             left: 50%;
             transform: translateX(-50%);
-            background: ${isDark ? '#1f2937' : '#1a1a2e'};
+            background: ${isDarkRef.current ? '#1f2937' : '#1a1a2e'};
             color: white;
             font-size: 9px;
             font-weight: 800;
@@ -516,8 +616,8 @@ export default function ShuttleMap({
           bottom: ${size + 4}px;
           left: 50%;
           transform: translateX(-50%);
-          background: ${isDark ? '#374151' : '#ffffff'};
-          color: ${isDark ? '#f3f4f6' : '#111827'};
+          background: ${isDarkRef.current ? '#374151' : '#ffffff'};
+          color: ${isDarkRef.current ? '#f3f4f6' : '#111827'};
           font-size: 10px;
           font-weight: 600;
           padding: 2px 8px;
@@ -554,11 +654,10 @@ export default function ShuttleMap({
   }, [stops, studentStop, eta, isDark, removeMarkersByType])
 
   // ─── Bus Marker with Smooth Animation ─────────────────────────────────────
-  // FIX: Track bus marker by type 'bus-main'
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !initializedRef.current) return
+    if (!map || !initializedRef.current || isStyleChangingRef.current) return
 
     const updateBusMarker = () => {
       if (!showLiveBus || !displayPosition) {
@@ -667,57 +766,90 @@ export default function ShuttleMap({
   }, [displayPosition, showLiveBus, busLocation, isDark, removeMarkersByKey])
 
   // ─── Fleet Bus Markers ────────────────────────────────────────────────────
-  // FIX: Track fleet markers individually by busId
+  // FIX: Update existing marker positions instead of removing/re-creating all
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !initializedRef.current) return
+    if (!map || !initializedRef.current || isStyleChangingRef.current) return
 
     const updateFleet = () => {
-      // Remove all existing fleet markers
-      removeMarkersByType('fleet')
+      if (!fleetBuses || fleetBuses.length === 0) {
+        // Remove all fleet markers if no buses
+        removeMarkersByType('fleet')
+        return
+      }
 
-      if (!fleetBuses || fleetBuses.length === 0) return
+      // Build a set of current fleet bus IDs
+      const currentBusIds = new Set(fleetBuses.map(fb => fb.busId))
 
+      // Remove markers for buses that are no longer in the fleet list
+      const toRemove = trackedMarkersRef.current.filter(
+        tm => tm.type === 'fleet' && !currentBusIds.has(tm.key.replace('fleet-', ''))
+      )
+      toRemove.forEach(tm => tm.marker.remove())
+      trackedMarkersRef.current = trackedMarkersRef.current.filter(
+        tm => tm.type !== 'fleet' || currentBusIds.has(tm.key.replace('fleet-', ''))
+      )
+
+      // Update or create markers for each fleet bus
       fleetBuses.forEach(fb => {
-        const el = createBusMarkerElement(
-          fb.heading ?? 0,
-          fb.speed,
-          fb.isLive,
-          fb.color ?? '#10b981'
-        )
-        el.classList.add('fleet-marker')
+        const markerKey = `fleet-${fb.busId}`
+        const existingTm = trackedMarkersRef.current.find(tm => tm.key === markerKey)
 
-        // Add name label
-        if (fb.busName) {
-          const label = document.createElement('div')
-          label.style.cssText = `
-            position: absolute;
-            top: calc(100% + 3px);
-            left: 50%;
-            transform: translateX(-50%);
-            background: ${isDark ? '#1f2937' : '#1a1a2e'};
-            color: white;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 8px;
-            white-space: nowrap;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-            pointer-events: none;
-          `
-          label.textContent = fb.busName
-          el.appendChild(label)
+        if (existingTm) {
+          // Update existing marker position
+          existingTm.marker.setLngLat([fb.lng, fb.lat])
+          
+          // Update heading and speed on the existing element
+          const innerEl = existingTm.marker.getElement().querySelector('.bus-icon-inner') as HTMLElement
+          if (innerEl) {
+            innerEl.style.transform = `rotate(${fb.heading ?? 0}deg)`
+          }
+          const speedEl = existingTm.marker.getElement().querySelector('.bus-speed-badge') as HTMLElement
+          if (speedEl && fb.speed != null) {
+            speedEl.textContent = `${Math.round(fb.speed)}`
+          }
+        } else {
+          // Create new marker
+          const el = createBusMarkerElement(
+            fb.heading ?? 0,
+            fb.speed,
+            fb.isLive,
+            fb.color ?? '#10b981'
+          )
+          el.classList.add('fleet-marker')
+
+          // Add name label
+          if (fb.busName) {
+            const label = document.createElement('div')
+            label.style.cssText = `
+              position: absolute;
+              top: calc(100% + 3px);
+              left: 50%;
+              transform: translateX(-50%);
+              background: ${isDarkRef.current ? '#1f2937' : '#1a1a2e'};
+              color: white;
+              font-size: 10px;
+              font-weight: 700;
+              padding: 2px 8px;
+              border-radius: 8px;
+              white-space: nowrap;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+              pointer-events: none;
+            `
+            label.textContent = fb.busName
+            el.appendChild(label)
+          }
+
+          const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+            .setLngLat([fb.lng, fb.lat])
+            .addTo(map)
+          trackedMarkersRef.current.push({
+            marker,
+            type: 'fleet',
+            key: markerKey,
+          })
         }
-
-        const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
-          .setLngLat([fb.lng, fb.lat])
-          .addTo(map)
-        trackedMarkersRef.current.push({
-          marker,
-          type: 'fleet',
-          key: `fleet-${fb.busId}`,
-        })
       })
     }
 
@@ -742,10 +874,7 @@ export default function ShuttleMap({
   }, [followBus, displayPosition])
 
   // ─── Fit Bounds ───────────────────────────────────────────────────────────
-  // FIX: Use a version counter instead of hasFittedRef for fleet views
-  // For fleet view (no routePath, no stops), re-fit when fleet buses change
 
-  const fitVersionRef = useRef(0)
   const lastFitDataRef = useRef<string>('')
 
   useEffect(() => {
@@ -771,17 +900,7 @@ export default function ShuttleMap({
     // Create a fingerprint of the data to avoid re-fitting with same data
     const fingerprint = `${routePath?.length ?? 0}-${stops?.length ?? 0}-${fleetBuses?.length ?? 0}-${!!displayPosition}`
 
-    // For route+stops views: fit once when data first arrives
-    // For fleet-only views: re-fit when fleet buses change
-    const hasRouteData = (routePath && routePath.length > 0) || (stops && stops.length > 0)
-
-    if (hasRouteData) {
-      // Route view: only fit once per unique data set
-      if (fingerprint === lastFitDataRef.current) return
-    } else {
-      // Fleet view: allow re-fitting when fleet buses change
-      if (fingerprint === lastFitDataRef.current) return
-    }
+    if (fingerprint === lastFitDataRef.current) return
 
     lastFitDataRef.current = fingerprint
 

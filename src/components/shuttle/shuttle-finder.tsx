@@ -216,9 +216,9 @@ export default function ShuttleFinder() {
     try {
       const coords = JSON.parse(selectedShuttle.routeCoordinates || '[]')
       if (Array.isArray(coords)) {
-        // Handle both [lat, lng] and [lng, lat] formats
+        // Normalize to [lat, lng] — if first value > 50 it's longitude
         return coords.map((c: [number, number]) => {
-          if (c[0] > 90) return [c[1], c[0]] as [number, number] // [lng, lat] -> [lat, lng]
+          if (c[0] > 50 && c[0] < 180) return [c[1], c[0]] as [number, number]
           return [c[0], c[1]] as [number, number]
         })
       }
@@ -233,7 +233,8 @@ export default function ShuttleFinder() {
       if (typeof stopCoords === 'object') {
         return Object.entries(stopCoords).map(([name, coord]) => {
           const c = coord as [number, number]
-          const isLngFirst = c[0] > 90
+          // If first value > 50, it's longitude
+          const isLngFirst = c[0] > 50 && c[0] < 180
           return {
             name,
             lat: isLngFirst ? c[1] : c[0],
