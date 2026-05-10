@@ -33,6 +33,12 @@ export async function GET(request: NextRequest) {
         if (Array.isArray(parsed)) routeCoords = parsed
       } catch {}
 
+      let routeStopCoords: Record<string, [number, number]> | Array<{ name: string; lat: number; lng: number; estimatedMinutes?: number }> = {}
+      try {
+        const parsed = JSON.parse(bus.routeStopCoordinates || '{}')
+        routeStopCoords = parsed
+      } catch {}
+
       const activeSubs = bus.subscriptions.length
       const occupancyPercent = bus.capacity > 0 ? Math.round((activeSubs / bus.capacity) * 100) : 0
 
@@ -68,7 +74,7 @@ export async function GET(request: NextRequest) {
         routeEnd: bus.routeEnd,
         stops: stopNames,
         routeCoordinates: routeCoords,
-        routeStopCoordinates: bus.routeStopCoordinates,
+        routeStopCoordinates: routeStopCoords,
         currentLat: bus.currentLat,
         currentLng: bus.currentLng,
         isLive,

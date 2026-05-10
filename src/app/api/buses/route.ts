@@ -43,14 +43,14 @@ export async function POST(request: Request) {
     }
 
     // Check if plate number already exists
-    const existingBus = await db.bus.findUnique({ where: { plateNumber } })
+    const existingBus = await db.bus.findFirst({ where: { plateNumber } })
     if (existingBus) {
       return NextResponse.json({ error: 'Bus with this plate number already exists' }, { status: 409 })
     }
 
     // If driverId provided, check driver is not already assigned
     if (driverId) {
-      const driverBus = await db.bus.findUnique({ where: { driverId } })
+      const driverBus = await db.bus.findFirst({ where: { driverId } })
       if (driverBus) {
         return NextResponse.json({ error: 'Driver is already assigned to another bus' }, { status: 409 })
       }
@@ -108,7 +108,7 @@ export async function PUT(request: Request) {
 
     // If updating driverId, check that driver is not already assigned to another bus
     if (fieldsToUpdate.driverId) {
-      const driverBus = await db.bus.findUnique({ where: { driverId: fieldsToUpdate.driverId as string } })
+      const driverBus = await db.bus.findFirst({ where: { driverId: fieldsToUpdate.driverId as string } })
       if (driverBus && driverBus.id !== id) {
         return NextResponse.json({ error: 'Driver is already assigned to another bus' }, { status: 409 })
       }
@@ -116,7 +116,7 @@ export async function PUT(request: Request) {
 
     // If updating plateNumber, check uniqueness
     if (fieldsToUpdate.plateNumber && fieldsToUpdate.plateNumber !== existingBus.plateNumber) {
-      const plateBus = await db.bus.findUnique({ where: { plateNumber: fieldsToUpdate.plateNumber as string } })
+      const plateBus = await db.bus.findFirst({ where: { plateNumber: fieldsToUpdate.plateNumber as string } })
       if (plateBus) {
         return NextResponse.json({ error: 'Bus with this plate number already exists' }, { status: 409 })
       }

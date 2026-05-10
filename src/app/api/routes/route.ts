@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
         direction: direction || 'forward',
         coordinates: JSON.stringify(coordinates),
         stops: JSON.stringify(stops || []),
-        totalDistance: totalDistance || null,
-        estimatedDuration: estimatedDuration || null,
+        totalDistance: totalDistance ?? null,
+        estimatedDuration: estimatedDuration ?? null,
       },
     })
 

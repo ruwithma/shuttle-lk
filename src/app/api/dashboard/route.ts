@@ -16,6 +16,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    // Validate that the supplied role matches the user's actual role
+    if (user.role !== role) {
+      return NextResponse.json({ error: 'Role mismatch - unauthorized access' }, { status: 403 })
+    }
+
     const now = new Date()
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -124,7 +129,7 @@ export async function GET(request: Request) {
     }
 
     if (role === 'DRIVER') {
-      const assignedBus = await db.bus.findUnique({
+      const assignedBus = await db.bus.findFirst({
         where: { driverId: userId },
         include: { owner: { select: { id: true, name: true, phone: true } } },
       })

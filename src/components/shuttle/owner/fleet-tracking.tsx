@@ -18,9 +18,9 @@ export default function FleetTracking() {
   const { locations, loading } = useFleetLocations(currentUser?.id ?? null)
   const [selectedBusId, setSelectedBusId] = useState<string | null>(null)
 
-  // Load buses if not already loaded
+  // Load buses (always fetch to ensure fresh data)
   useEffect(() => {
-    if (!currentUser || buses.length > 0) return
+    if (!currentUser) return
     fetch(`/api/buses?ownerId=${currentUser.id}`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
@@ -29,7 +29,7 @@ export default function FleetTracking() {
         }
       })
       .catch(() => {})
-  }, [currentUser, buses.length])
+  }, [currentUser])
 
   // Parse route paths from bus data
   // Bus.routeCoordinates stores [lat, lng] pairs (seed data convention)

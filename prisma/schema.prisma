@@ -29,7 +29,7 @@ model User {
 
 model Bus {
   id          String   @id @default(cuid())
-  plateNumber String
+  plateNumber String @unique
   name        String
   capacity    Int      @default(50)
   routeName   String
@@ -54,6 +54,9 @@ model Bus {
   expenses     Expense[]
   locations    BusLocation[]
   routes       Route[]
+
+  @@index([ownerId])
+  @@index([active])
 }
 
 model Subscription {
@@ -72,6 +75,10 @@ model Subscription {
   student User  @relation(fields: [studentId], references: [id])
   bus     Bus   @relation(fields: [busId], references: [id])
   payments Payment[]
+
+  @@index([studentId])
+  @@index([busId])
+  @@index([studentId, busId, active])
 }
 
 model Payment {
@@ -92,6 +99,12 @@ model Payment {
   bus          Bus          @relation(fields: [busId], references: [id])
   subscription Subscription? @relation(fields: [subscriptionId], references: [id])
   collector    User         @relation("CollectedPayments", fields: [collectedById], references: [id])
+
+  @@index([studentId])
+  @@index([busId])
+  @@index([collectedById])
+  @@index([month])
+  @@index([studentId, busId, paymentType, month])
 }
 
 model Expense {
@@ -106,6 +119,9 @@ model Expense {
 
   bus      Bus  @relation(fields: [busId], references: [id])
   recorder User @relation("ExpenseRecorder", fields: [recordedById], references: [id])
+
+  @@index([busId])
+  @@index([recordedById])
 }
 
 model BusLocation {
@@ -118,6 +134,9 @@ model BusLocation {
   timestamp DateTime @default(now())
 
   bus Bus @relation(fields: [busId], references: [id])
+
+  @@index([busId])
+  @@index([timestamp])
 }
 
 model Notification {
@@ -130,6 +149,9 @@ model Notification {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([read])
 }
 
 model Route {
@@ -147,4 +169,6 @@ model Route {
   updatedAt         DateTime @updatedAt
 
   bus Bus @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  @@index([busId])
 }

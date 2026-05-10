@@ -56,8 +56,8 @@ export async function GET(request: NextRequest) {
         busId: bus.id,
         busName: bus.name,
         plateNumber: bus.plateNumber,
-        lat: bus.currentLat ?? latestLocation?.lat ?? 0,
-        lng: bus.currentLng ?? latestLocation?.lng ?? 0,
+        lat: bus.currentLat ?? latestLocation?.lat ?? null,
+        lng: bus.currentLng ?? latestLocation?.lng ?? null,
         speed: latestLocation?.speed ?? null,
         heading: latestLocation?.heading ?? null,
         timestamp: latestLocation?.timestamp ?? bus.locationUpdatedAt ?? null,
@@ -126,26 +126,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create BusLocation record
-    const location = await db.busLocation.create({
-      data: {
-        busId,
-        lat: parseFloat(String(lat)),
-        lng: parseFloat(String(lng)),
-        speed: speed ? parseFloat(String(speed)) : null,
-        heading: heading ? parseFloat(String(heading)) : null,
-      },
-    })
-
-    // Update Bus's currentLat, currentLng, locationUpdatedAt
-    await db.bus.update({
-      where: { id: busId },
-      data: {
-        currentLat: parseFloat(String(lat)),
-        currentLng: parseFloat(String(lng)),
-        locationUpdatedAt: new Date(),
-      },
-    })
+    // Create BusLocation record and update Bus current position in a transaction
+    const [location] = await db.$transaction([
+      db.busLocation.create({
+        data: {
+          busId,
+          lat: parseFloat(String(lat)),
+          lng: parseFloat(String(lng)),
+          speed: speed != null ? parseFloat(String(speed)) : null,
+          heading: heading != null ? parseFloat(String(heading)) : null,
+        },
+      }),
+      db.bus.update({
+        where: { id: busId },
+        data: {
+          currentLat: parseFloat(String(lat)),
+          currentLng: parseFloat(String(lng)),
+          locationUpdatedAt: new Date(),
+        },
+      }),
+    ])
 
     return NextResponse.json({ location }, { status: 201 })
   } catch (error) {

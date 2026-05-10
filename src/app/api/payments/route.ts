@@ -15,11 +15,13 @@ export async function GET(request: Request) {
 
     const where: Record<string, unknown> = {}
 
-    if (busId) where.busId = busId
     if (studentId) where.studentId = studentId
     if (month) where.month = month
     if (paymentType) where.paymentType = paymentType
     if (paymentMethod) where.paymentMethod = paymentMethod
+
+    // Determine busId filter - combine busId with ownerId/driverId constraints
+    let busIdFilter: string | string[] | undefined = busId || undefined
 
     // Filter by owner's buses
     if (ownerId) {
@@ -27,21 +29,44 @@ export async function GET(request: Request) {
         where: { ownerId },
         select: { id: true },
       })
-      const busIds = ownedBuses.map(b => b.id)
-      where.busId = { in: busIds }
+      const ownerBusIds = ownedBuses.map(b => b.id)
+      if (busIdFilter) {
+        // Intersect: only include if busId matches owner's buses
+        busIdFilter = Array.isArray(busIdFilter) ? busIdFilter : [busIdFilter]
+        busIdFilter = busIdFilter.filter(id => ownerBusIds.includes(id))
+        if (busIdFilter.length === 0) {
+          return NextResponse.json([], { status: 200 })
+        }
+      } else {
+        busIdFilter = ownerBusIds
+      }
     }
 
     // Filter by driver's bus
     if (driverId) {
-      const assignedBus = await db.bus.findUnique({
+      const assignedBus = await db.bus.findFirst({
         where: { driverId },
         select: { id: true },
       })
       if (assignedBus) {
-        where.busId = assignedBus.id
+        if (busIdFilter) {
+          // Intersect: only include if busId matches driver's bus
+          const driverBusIds = Array.isArray(busIdFilter) ? busIdFilter : [busIdFilter]
+          if (!driverBusIds.includes(assignedBus.id)) {
+            return NextResponse.json([], { status: 200 })
+          }
+          busIdFilter = assignedBus.id
+        } else {
+          busIdFilter = assignedBus.id
+        }
       } else {
         return NextResponse.json([], { status: 200 })
       }
+    }
+
+    // Apply busId filter
+    if (busIdFilter) {
+      where.busId = Array.isArray(busIdFilter) ? { in: busIdFilter } : busIdFilter
     }
 
     const payments = await db.payment.findMany({

@@ -70,6 +70,7 @@ function AppContent() {
         case 'collect': return <CollectPayment />
         case 'record-route': return <RouteRecorder />
         case 'driver-history': return <DriverHistory />
+        case 'notifications': return <NotificationPanel />
         case 'more': return <NotificationPanel />
         default: return <DriverDashboard />
       }
@@ -81,6 +82,7 @@ function AppContent() {
         case 'dashboard': return <StudentDashboard />
         case 'route': return <MyRoute />
         case 'payments': return <StudentPaymentHistory />
+        case 'notifications': return <NotificationPanel />
         case 'more': return <NotificationPanel />
         default: return <StudentDashboard />
       }

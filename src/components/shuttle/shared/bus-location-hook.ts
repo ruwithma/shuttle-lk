@@ -34,7 +34,6 @@ export function useBusLocation(busId: string | null | undefined): UseBusLocation
   const [isLive, setIsLive] = useState(false)
   const [trail, setTrail] = useState<TrailPoint[]>([])
   const [interpolatedPosition, setInterpolatedPosition] = useState<{ lat: number; lng: number } | null>(null)
-  const [activeBusId, setActiveBusId] = useState<string | null>(null)
   const subscribedRef = useRef<string | null>(null)
   const interpRef = useRef<{
     startLat: number; startLng: number
@@ -43,15 +42,21 @@ export function useBusLocation(busId: string | null | undefined): UseBusLocation
   } | null>(null)
   const interpFrameRef = useRef<number>(0)
 
-  // Reset state when busId changes
-  const resolvedBusId = busId ?? null
-  if (activeBusId !== resolvedBusId) {
-    setActiveBusId(resolvedBusId)
-    setLocation(null)
-    setIsLive(false)
-    setTrail([])
-    setInterpolatedPosition(null)
-  }
+  // Derive activeBusId directly from busId (no separate state needed)
+  const activeBusId = busId ?? null
+
+  // Track previous busId to detect changes and reset state
+  const prevBusIdRef = useRef<string | null>(activeBusId)
+  useEffect(() => {
+    if (prevBusIdRef.current !== activeBusId) {
+      prevBusIdRef.current = activeBusId
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Resetting state when tracked entity changes is a standard React pattern
+      setLocation(null)
+      setIsLive(false)
+      setTrail([])
+      setInterpolatedPosition(null)
+    }
+  }, [activeBusId])
 
   // Fetch initial data when activeBusId changes
   useEffect(() => {
@@ -84,12 +89,14 @@ export function useBusLocation(busId: string | null | undefined): UseBusLocation
     return () => { cancelled = true }
   }, [activeBusId])
 
-  // Interpolation loop — runs continuously, not restarted on every location update
-  // FIX: Start the loop once when activeBusId is set, stop when it changes
+  // Interpolation loop — only runs when actively interpolating
   useEffect(() => {
     if (!activeBusId) return
 
+    let running = true
+
     const animate = () => {
+      if (!running) return
       const interp = interpRef.current
       if (interp) {
         const now = performance.now()
@@ -99,15 +106,27 @@ export function useBusLocation(busId: string | null | undefined): UseBusLocation
         const lat = interp.startLat + (interp.endLat - interp.startLat) * eased
         const lng = interp.startLng + (interp.endLng - interp.startLng) * eased
         setInterpolatedPosition({ lat, lng })
+
+        if (t < 1) {
+          interpFrameRef.current = requestAnimationFrame(animate)
+        } else {
+          // Interpolation complete, clear ref and schedule next check
+          interpRef.current = null
+          interpFrameRef.current = window.setTimeout(animate, 100) as unknown as number
+        }
+      } else {
+        // No interpolation needed, schedule next check in 100ms instead of every frame
+        interpFrameRef.current = window.setTimeout(animate, 100) as unknown as number
       }
-      interpFrameRef.current = requestAnimationFrame(animate)
     }
 
     interpFrameRef.current = requestAnimationFrame(animate)
 
     return () => {
+      running = false
       if (interpFrameRef.current) {
         cancelAnimationFrame(interpFrameRef.current)
+        clearTimeout(interpFrameRef.current)
       }
     }
   }, [activeBusId])

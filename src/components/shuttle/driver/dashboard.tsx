@@ -149,14 +149,21 @@ export default function DriverDashboard() {
         },
         () => {
           setSimulationMode(true)
+          simulationModeRef.current = true
         },
         { enableHighAccuracy: true, timeout: 5000 }
       )
     } else {
       setSimulationMode(true)
+      simulationModeRef.current = true
     }
 
     // Start interval for continuous updates (2s for smoother tracking)
+    // Clear any existing interval first to prevent leaks
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
     intervalRef.current = setInterval(() => {
       if (simulationModeRef.current || !('geolocation' in navigator)) {
         // Simulation mode - move along route
